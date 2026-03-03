@@ -2,22 +2,24 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Naman OS 3.0</title>
+<title>Naman OS 4.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
 :root{
---bg:#111827;
---card:#1f2937;
---text:white;
+--bg:#0f172a;
+--card:#1e293b;
+--text:#ffffff;
 --accent:#00f5d4;
+--danger:#ef4444;
 }
 
 .light{
---bg:#f3f4f6;
---card:white;
---text:#111827;
+--bg:#f1f5f9;
+--card:#ffffff;
+--text:#0f172a;
 --accent:#2563eb;
+--danger:#dc2626;
 }
 
 body{
@@ -35,6 +37,7 @@ padding:15px;
 background:var(--card);
 position:sticky;
 top:0;
+z-index:10;
 }
 
 .nav button{
@@ -43,6 +46,7 @@ border:none;
 color:var(--text);
 font-weight:600;
 cursor:pointer;
+margin-right:10px;
 }
 
 .section{display:none;padding:20px;}
@@ -61,6 +65,15 @@ padding:10px;
 margin-top:10px;
 border-radius:10px;
 border:none;
+background:#334155;
+color:white;
+}
+
+.light input,
+.light select,
+.light textarea{
+background:#e2e8f0;
+color:black;
 }
 
 button.action{
@@ -76,13 +89,13 @@ color:white;
 
 .grid{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
 gap:15px;
 }
 
 .circle{
-width:120px;
-height:120px;
+width:140px;
+height:140px;
 position:relative;
 margin:auto;
 }
@@ -95,28 +108,46 @@ top:50%;
 left:50%;
 transform:translate(-50%,-50%);
 font-weight:600;
+text-align:center;
 }
 
 .calendar{
 display:grid;
 grid-template-columns:repeat(7,1fr);
-gap:5px;
+gap:6px;
 margin-top:15px;
 }
 
 .day{
 background:var(--card);
-padding:10px;
+padding:8px;
 border-radius:10px;
-min-height:60px;
+min-height:70px;
 font-size:12px;
 }
 
 .alert{
-background:#dc2626;
+background:var(--danger);
 padding:10px;
 border-radius:10px;
 margin-bottom:10px;
+}
+
+.progressbar{
+height:8px;
+background:#334155;
+border-radius:10px;
+overflow:hidden;
+margin-top:6px;
+}
+
+.progress{
+height:100%;
+background:var(--accent);
+}
+
+textarea{
+resize:vertical;
 }
 
 </style>
@@ -128,7 +159,7 @@ margin-bottom:10px;
 <button onclick="showSection('dashboard')">Dashboard</button>
 <button onclick="showSection('tasks')">Tasks</button>
 <button onclick="showSection('calendar')">Calendar</button>
-<button onclick="showSection('videos')">Videos</button>
+<button onclick="showSection('videos')">Scripts</button>
 </div>
 <button onclick="toggleMode()">🌗</button>
 </div>
@@ -137,9 +168,7 @@ margin-bottom:10px;
 <div id="dashboard" class="section active">
 <h2>Dashboard</h2>
 <div id="priorityAlert"></div>
-
 <div class="grid" id="progressCircles"></div>
-
 <div class="card" id="videoStats"></div>
 </div>
 
@@ -179,17 +208,13 @@ margin-bottom:10px;
 
 <!-- VIDEOS -->
 <div id="videos" class="section">
-<h2>Video Pipeline</h2>
+<h2>🎬 Script Studio</h2>
 
+<div class="card">
 <input type="text" id="videoTitle" placeholder="Video Title">
-<select id="videoStage">
-<option>Scripting</option>
-<option>Shooting</option>
-<option>Editing</option>
-<option>Thumbnail</option>
-<option>Uploaded</option>
-</select>
-<button class="action" onclick="addVideo()">Save</button>
+<textarea id="videoScript" rows="8" placeholder="Write your script here..."></textarea>
+<button class="action" onclick="addVideo()">Save Script</button>
+</div>
 
 <div id="videoList"></div>
 </div>
