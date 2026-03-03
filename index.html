@@ -2,8 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Naman OS 7.0</title>
-
+<title>Naman OS 8.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
@@ -66,18 +65,22 @@ cursor:pointer;
 font-weight:600;
 color:white;
 }
-.calendar{
-display:grid;
-grid-template-columns:repeat(7,1fr);
-gap:6px;
-margin-top:10px;
-}
-.day{
-background:var(--card);
-padding:6px;
+.progressbar{
+height:8px;
+background:#334155;
 border-radius:10px;
-min-height:70px;
-font-size:12px;
+overflow:hidden;
+margin-top:8px;
+}
+.progress{
+height:100%;
+background:var(--accent);
+}
+.stat-box{
+background:var(--card);
+padding:15px;
+border-radius:15px;
+margin-top:15px;
 }
 </style>
 </head>
@@ -85,16 +88,23 @@ font-size:12px;
 
 <div class="nav">
 <div>
+<button onclick="showSection('dashboard')">Dashboard</button>
 <button onclick="showSection('tasks')">Tasks</button>
-<button onclick="showSection('calendar')">Calendar</button>
-<button onclick="showSection('videos')">Scripts</button>
+<button onclick="showSection('videos')">Videos</button>
 </div>
 <button onclick="toggleMode()">🌗</button>
 </div>
 
+<!-- DASHBOARD -->
+<div id="dashboard" class="section active">
+<h2>Dashboard</h2>
+<div id="taskStats" class="stat-box"></div>
+<div id="videoStats" class="stat-box"></div>
+</div>
+
 <!-- TASKS -->
-<div id="tasks" class="section active">
-<h2>Tasks (Realtime Sync)</h2>
+<div id="tasks" class="section">
+<h2>Tasks (Realtime)</h2>
 
 <select id="taskCategory">
 <option>Fitness</option>
@@ -115,21 +125,14 @@ font-size:12px;
 <div id="taskList"></div>
 </div>
 
-<!-- CALENDAR -->
-<div id="calendar" class="section">
-<h2>Content Calendar (Local)</h2>
-<input type="date" id="contentDate">
-<input type="text" id="contentText" placeholder="Video Idea">
-<button class="action" onclick="addContent()">Add</button>
-<div class="calendar" id="calendarGrid"></div>
-</div>
-
 <!-- VIDEOS -->
 <div id="videos" class="section">
-<h2>Script Studio (Local)</h2>
+<h2>Video Pipeline (Realtime)</h2>
+
 <input type="text" id="videoTitle" placeholder="Video Title">
-<textarea id="videoScript" rows="5"></textarea>
+<textarea id="videoScript" rows="5" placeholder="Write script..."></textarea>
 <button class="action" onclick="addVideo()">Add Video</button>
+
 <div id="videoList"></div>
 </div>
 
@@ -140,7 +143,6 @@ font-size:12px;
 <script>
 
 /* FIREBASE INIT */
-
 const firebaseConfig = {
   apiKey: "AIzaSyA9Ngg4cZ6H0gOePfHZ4GOg1_YZe5qZS7Y",
   authDomain: "progress-app-6e9e6.firebaseapp.com",
@@ -149,11 +151,14 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
 const tasksRef = db.collection("tasks");
+const videosRef = db.collection("videos");
 
 let tasks = [];
-let contents = JSON.parse(localStorage.getItem("contents")) || [];
-let videos = JSON.parse(localStorage.getItem("videos")) || [];
+let videos = [];
+
+/* NAVIGATION */
 
 function showSection(id){
 document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
@@ -164,14 +169,13 @@ function toggleMode(){
 document.body.classList.toggle("light");
 }
 
-/* TASKS (REALTIME) */
+/* ================= TASKS ================= */
 
 function addTask(){
-let text = taskInput.value;
-if(!text) return;
+if(!taskInput.value) return;
 
 tasksRef.add({
-text,
+text: taskInput.value,
 cat: taskCategory.value,
 pri: taskPriority.value,
 done:false,
@@ -194,62 +198,121 @@ tasks=[];
 taskList.innerHTML="";
 snapshot.forEach(doc=>{
 let t = doc.data();
+tasks.push({id:doc.id,...t});
 taskList.innerHTML+=`
 <div class="card">
 <input type="checkbox" ${t.done?"checked":""}
 onclick="toggleTask('${doc.id}',${t.done})">
 <b>${t.text}</b> (${t.cat}-${t.pri})
-<button onclick="deleteTask('${doc.id}')" style="float:right;background:red;color:white;border:none;">X</button>
-</div>
-`;
+<button onclick="deleteTask('${doc.id}')"
+style="float:right;background:red;color:white;border:none;">X</button>
+</div>`;
 });
+updateDashboard();
 });
 
-/* CALENDAR (LOCAL) */
-
-function addContent(){
-if(!contentDate.value || !contentText.value) return;
-contents.push({date:contentDate.value,text:contentText.value});
-localStorage.setItem("contents",JSON.stringify(contents));
-renderCalendar();
-contentText.value="";
-}
-
-function renderCalendar(){
-calendarGrid.innerHTML="";
-let now=new Date();
-let year=now.getFullYear();
-let month=now.getMonth();
-let days=new Date(year,month+1,0).getDate();
-for(let d=1; d<=days; d++){
-calendarGrid.innerHTML+=`<div class="day">${d}</div>`;
-}
-}
-renderCalendar();
-
-/* VIDEOS (LOCAL) */
+/* ================= VIDEOS ================= */
 
 function addVideo(){
 if(!videoTitle.value) return;
-videos.push({title:videoTitle.value,script:videoScript.value});
-localStorage.setItem("videos",JSON.stringify(videos));
-renderVideos();
+
+videosRef.add({
+title: videoTitle.value,
+script: videoScript.value,
+stages:{
+scripting:true,
+shooting:false,
+editing:false,
+thumbnail:false,
+posting:false
+},
+created: Date.now()
+});
+
 videoTitle.value="";
 videoScript.value="";
 }
 
-function renderVideos(){
+function updateScript(id,value){
+videosRef.doc(id).update({script:value});
+}
+
+function toggleStage(id,stage,current){
+videosRef.doc(id).update({[`stages.${stage}`]:!current});
+}
+
+function deleteVideo(id){
+videosRef.doc(id).delete();
+}
+
+videosRef.orderBy("created").onSnapshot(snapshot=>{
+videos=[];
 videoList.innerHTML="";
-videos.forEach((v,i)=>{
+snapshot.forEach(doc=>{
+let v = doc.data();
+videos.push({id:doc.id,...v});
+
+let completed = Object.values(v.stages).filter(Boolean).length;
+let percent = Math.round((completed/5)*100);
+
 videoList.innerHTML+=`
 <div class="card">
 <h3>${v.title}</h3>
-<textarea onchange="videos[${i}].script=this.value;localStorage.setItem('videos',JSON.stringify(videos));">${v.script}</textarea>
+
+<textarea rows="4"
+onchange="updateScript('${doc.id}',this.value)">${v.script||""}</textarea>
+
+<label><input type="checkbox" ${v.stages.scripting?"checked":""}
+onclick="toggleStage('${doc.id}','scripting',${v.stages.scripting})"> Scripting</label><br>
+
+<label><input type="checkbox" ${v.stages.shooting?"checked":""}
+onclick="toggleStage('${doc.id}','shooting',${v.stages.shooting})"> Shooting</label><br>
+
+<label><input type="checkbox" ${v.stages.editing?"checked":""}
+onclick="toggleStage('${doc.id}','editing',${v.stages.editing})"> Editing</label><br>
+
+<label><input type="checkbox" ${v.stages.thumbnail?"checked":""}
+onclick="toggleStage('${doc.id}','thumbnail',${v.stages.thumbnail})"> Thumbnail</label><br>
+
+<label><input type="checkbox" ${v.stages.posting?"checked":""}
+onclick="toggleStage('${doc.id}','posting',${v.stages.posting})"> Posting</label>
+
+<div class="progressbar">
+<div class="progress" style="width:${percent}%"></div>
 </div>
-`;
+
+<b>${percent}% Complete</b>
+
+<button onclick="deleteVideo('${doc.id}')"
+style="margin-top:10px;background:red;color:white;border:none;">Delete</button>
+</div>`;
 });
+updateDashboard();
+});
+
+/* ================= DASHBOARD ================= */
+
+function updateDashboard(){
+let totalTasks = tasks.length;
+let completedTasks = tasks.filter(t=>t.done).length;
+let taskPercent = totalTasks ? Math.round((completedTasks/totalTasks)*100) : 0;
+
+taskStats.innerHTML = `
+<h3>Tasks</h3>
+Total: ${totalTasks}<br>
+Completed: ${completedTasks}<br>
+Progress: ${taskPercent}%
+`;
+
+let totalVideos = videos.length;
+let postedVideos = videos.filter(v=>v.stages.posting).length;
+
+videoStats.innerHTML = `
+<h3>Videos</h3>
+Total: ${totalVideos}<br>
+Posted: ${postedVideos}
+`;
 }
-renderVideos();
 
 </script>
 </body>
