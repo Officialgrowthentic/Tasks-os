@@ -196,148 +196,208 @@ margin-bottom:10px;
 
 <script>
 
-let tasks=JSON.parse(localStorage.getItem("tasks"))||[];
-let contents=JSON.parse(localStorage.getItem("contents"))||[];
-let videos=JSON.parse(localStorage.getItem("videos"))||[];
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+let contents = JSON.parse(localStorage.getItem("contents")) || [];
+let videos = JSON.parse(localStorage.getItem("videos")) || [];
 
 function save(){
-localStorage.setItem("tasks",JSON.stringify(tasks));
-localStorage.setItem("contents",JSON.stringify(contents));
-localStorage.setItem("videos",JSON.stringify(videos));
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+  localStorage.setItem("contents", JSON.stringify(contents));
+  localStorage.setItem("videos", JSON.stringify(videos));
 }
 
 function showSection(id){
-document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-document.getElementById(id).classList.add("active");
-updateDashboard();
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  updateDashboard();
 }
 
 function toggleMode(){
-document.body.classList.toggle("light");
+  document.body.classList.toggle("light");
 }
+
+/* ---------------- TASKS ---------------- */
 
 function addTask(){
-let cat=document.getElementById("taskCategory").value;
-let pri=document.getElementById("taskPriority").value;
-let text=document.getElementById("taskInput").value;
-if(!text)return;
-tasks.push({cat,pri,text,done:false});
-document.getElementById("taskInput").value="";
-save();renderTasks();updateDashboard();
-}
+  let cat=document.getElementById("taskCategory").value;
+  let pri=document.getElementById("taskPriority").value;
+  let text=document.getElementById("taskInput").value;
+  if(!text)return;
 
-function renderTasks(){
-let list=document.getElementById("taskList");
-list.innerHTML="";
-tasks.forEach((t,i)=>{
-let div=document.createElement("div");
-div.className="card";
-div.innerHTML=`
-<b>${t.cat}</b> (${t.pri})
-<br>${t.text}
-<br>
-<button onclick="toggleTask(${i})">✔</button>
-`;
-list.appendChild(div);
-});
+  tasks.push({cat,pri,text,done:false});
+  document.getElementById("taskInput").value="";
+  save();
+  renderTasks();
+  updateDashboard();
 }
 
 function toggleTask(i){
-tasks[i].done=!tasks[i].done;
-save();renderTasks();updateDashboard();
+  tasks[i].done=!tasks[i].done;
+  save();
+  renderTasks();
+  updateDashboard();
 }
 
-function updateDashboard(){
-let alertBox="";
-let high=tasks.filter(t=>t.pri==="High"&&!t.done);
-if(high.length){
-alertBox=`<div class="alert">⚠ ${high.length} High Priority Tasks Pending!</div>`;
-}
-document.getElementById("priorityAlert").innerHTML=alertBox;
-
-let cats=["Fitness","Business","Work","General"];
-let grid="";
-cats.forEach(cat=>{
-let total=tasks.filter(t=>t.cat===cat).length;
-let done=tasks.filter(t=>t.cat===cat&&t.done).length;
-let p=total?Math.round((done/total)*100):0;
-grid+=circleHTML(cat,p);
-});
-document.getElementById("progressCircles").innerHTML=grid;
-
-let scripted=videos.filter(v=>v.stage==="Scripting").length;
-let shooting=videos.filter(v=>v.stage==="Shooting").length;
-let editing=videos.filter(v=>v.stage==="Editing").length;
-let uploaded=videos.filter(v=>v.stage==="Uploaded").length;
-
-document.getElementById("videoStats").innerHTML=`
-📝 Scripted: ${scripted}<br>
-🎥 Shooting: ${shooting}<br>
-✂ Editing: ${editing}<br>
-🚀 Uploaded: ${uploaded}
-`;
+function renderTasks(){
+  let list=document.getElementById("taskList");
+  list.innerHTML="";
+  tasks.forEach((t,i)=>{
+    list.innerHTML+=`
+    <div class="card">
+      <b>${t.cat}</b> (${t.pri})
+      <br>${t.text}
+      <br>
+      <button onclick="toggleTask(${i})">✔</button>
+    </div>`;
+  });
 }
 
-function circleHTML(label,p){
-let r=50;
-let circ=2*Math.PI*r;
-let offset=circ-(circ*p)/100;
-return `
-<div class="circle">
-<svg width="120" height="120">
-<circle cx="60" cy="60" r="${r}" stroke="#374151" stroke-width="10" fill="none"/>
-<circle cx="60" cy="60" r="${r}" stroke="var(--accent)" stroke-width="10"
-fill="none" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
-stroke-linecap="round"/>
-</svg>
-<span>${label}<br>${p}%</span>
-</div>
-`;
-}
-
-function addContent(){
-let date=document.getElementById("contentDate").value;
-let text=document.getElementById("contentText").value;
-if(!date||!text)return;
-contents.push({date,text});
-save();renderCalendar();
-}
-
-function renderCalendar(){
-let month=document.getElementById("monthPicker").value;
-if(!month)month=new Date().toISOString().slice(0,7);
-let [year,m]=month.split("-");
-let first=new Date(year,m-1,1).getDay();
-let days=new Date(year,m,0).getDate();
-let grid="";
-for(let i=0;i<first;i++)grid+=`<div></div>`;
-for(let d=1;d<=days;d++){
-let full=`${month}-${String(d).padStart(2,"0")}`;
-let events=contents.filter(c=>c.date===full).map(c=>c.text).join("<br>");
-grid+=`<div class="day"><b>${d}</b><br>${events}</div>`;
-}
-document.getElementById("calendarGrid").innerHTML=grid;
-}
+/* ---------------- VIDEOS ---------------- */
 
 function addVideo(){
-let title=document.getElementById("videoTitle").value;
-let stage=document.getElementById("videoStage").value;
-if(!title)return;
-videos.push({title,stage});
-save();renderVideos();updateDashboard();
+  let title=document.getElementById("videoTitle").value;
+  let script=document.getElementById("videoScript").value;
+
+  if(!title)return;
+
+  videos.push({
+    title,
+    script,
+    stages:{
+      scripting:true,
+      shooting:false,
+      editing:false,
+      thumbnail:false,
+      uploaded:false
+    }
+  });
+
+  document.getElementById("videoTitle").value="";
+  document.getElementById("videoScript").value="";
+  save();
+  renderVideos();
+  updateDashboard();
+}
+
+function toggleStage(index,stage){
+  videos[index].stages[stage]=!videos[index].stages[stage];
+  save();
+  renderVideos();
+  updateDashboard();
+}
+
+function updateScript(index,value){
+  videos[index].script=value;
+  save();
 }
 
 function renderVideos(){
-let list=document.getElementById("videoList");
-list.innerHTML="";
-videos.forEach(v=>{
-list.innerHTML+=`<div class="card"><b>${v.title}</b><br>${v.stage}</div>`;
-});
+  let list=document.getElementById("videoList");
+  list.innerHTML="";
+
+  videos.forEach((v,i)=>{
+
+    let completed = Object.values(v.stages).filter(Boolean).length;
+    let percent = Math.round((completed/5)*100);
+
+    list.innerHTML+=`
+    <div class="card">
+      <h3>${v.title}</h3>
+
+      <textarea rows="6"
+      onchange="updateScript(${i},this.value)"
+      placeholder="Write script here...">${v.script || ""}</textarea>
+
+      <div style="margin-top:10px;">
+        <label><input type="checkbox"
+        ${v.stages.scripting?"checked":""}
+        onclick="toggleStage(${i},'scripting')"> Scripting</label><br>
+
+        <label><input type="checkbox"
+        ${v.stages.shooting?"checked":""}
+        onclick="toggleStage(${i},'shooting')"> Shooting</label><br>
+
+        <label><input type="checkbox"
+        ${v.stages.editing?"checked":""}
+        onclick="toggleStage(${i},'editing')"> Editing</label><br>
+
+        <label><input type="checkbox"
+        ${v.stages.thumbnail?"checked":""}
+        onclick="toggleStage(${i},'thumbnail')"> Thumbnail</label><br>
+
+        <label><input type="checkbox"
+        ${v.stages.uploaded?"checked":""}
+        onclick="toggleStage(${i},'uploaded')"> Uploaded</label>
+      </div>
+
+      <div class="progressbar">
+        <div class="progress" style="width:${percent}%"></div>
+      </div>
+      <b>${percent}% Complete</b>
+
+    </div>`;
+  });
 }
+
+/* ---------------- DASHBOARD ---------------- */
+
+function updateDashboard(){
+
+  let high=tasks.filter(t=>t.pri==="High"&&!t.done);
+  document.getElementById("priorityAlert").innerHTML=
+  high.length?`<div class="alert">⚠ ${high.length} High Priority Tasks Pending!</div>`:"";
+
+  let cats=["Fitness","Business","Work","General"];
+  let grid="";
+  let totalTasks=tasks.length;
+  let doneTasks=tasks.filter(t=>t.done).length;
+  let overall=totalTasks?Math.round((doneTasks/totalTasks)*100):0;
+
+  grid+=circleHTML("Overall",overall);
+
+  cats.forEach(cat=>{
+    let total=tasks.filter(t=>t.cat===cat).length;
+    let done=tasks.filter(t=>t.cat===cat&&t.done).length;
+    let p=total?Math.round((done/total)*100):0;
+    grid+=circleHTML(cat,p);
+  });
+
+  document.getElementById("progressCircles").innerHTML=grid;
+
+  let scripted=videos.filter(v=>v.stages.scripting).length;
+  let shooting=videos.filter(v=>v.stages.shooting).length;
+  let editing=videos.filter(v=>v.stages.editing).length;
+  let uploaded=videos.filter(v=>v.stages.uploaded).length;
+
+  document.getElementById("videoStats").innerHTML=`
+  📝 Scripted: ${scripted}<br>
+  🎥 Shooting: ${shooting}<br>
+  ✂ Editing: ${editing}<br>
+  🖼 Thumbnail: ${videos.filter(v=>v.stages.thumbnail).length}<br>
+  🚀 Uploaded: ${uploaded}
+  `;
+}
+
+function circleHTML(label,p){
+  let r=55;
+  let circ=2*Math.PI*r;
+  let offset=circ-(circ*p)/100;
+  return `
+  <div class="circle">
+    <svg width="140" height="140">
+      <circle cx="70" cy="70" r="${r}" stroke="#334155" stroke-width="10" fill="none"/>
+      <circle cx="70" cy="70" r="${r}" stroke="var(--accent)" stroke-width="10"
+      fill="none" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
+      stroke-linecap="round"/>
+    </svg>
+    <span>${label}<br>${p}%</span>
+  </div>`;
+}
+
+/* ---------------- INIT ---------------- */
 
 renderTasks();
 renderVideos();
-renderCalendar();
 updateDashboard();
 
 </script>
