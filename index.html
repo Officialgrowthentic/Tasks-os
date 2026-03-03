@@ -206,217 +206,68 @@ flex-wrap:wrap;
 <div id="videoList"></div>
 </div>
 
-<script>
+<script type="module">
 
-let tasks=JSON.parse(localStorage.getItem("tasks"))||[];
-let contents=JSON.parse(localStorage.getItem("contents"))||[];
-let videos=JSON.parse(localStorage.getItem("videos"))||[];
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc }
+from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-function save(){
-localStorage.setItem("tasks",JSON.stringify(tasks));
-localStorage.setItem("contents",JSON.stringify(contents));
-localStorage.setItem("videos",JSON.stringify(videos));
-}
+const firebaseConfig = {
+  apiKey: "AIzaSyA9Ngg4cZ6H0gOePfHZ4GOg1_YZe5qZS7Y",
+  authDomain: "progress-app-6e9e6.firebaseapp.com",
+  projectId: "progress-app-6e9e6",
+  storageBucket: "progress-app-6e9e6.firebasestorage.app",
+  messagingSenderId: "867817123277",
+  appId: "1:867817123277:web:6d8fd798a621684295a884"
+};
 
-function showSection(id){
-document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-document.getElementById(id).classList.add("active");
-updateDashboard();
-}
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-function toggleMode(){
-document.body.classList.toggle("light");
-}
+const taskList = document.getElementById("taskList");
+const tasksCollection = collection(db, "tasks");
 
-/* TASKS */
+/* ADD TASK */
+window.addTask = async function(){
+  let cat = taskCategory.value;
+  let pri = taskPriority.value;
+  let text = taskInput.value;
+  if(!text) return;
 
-function addTask(){
-let cat=taskCategory.value;
-let pri=taskPriority.value;
-let text=taskInput.value;
-if(!text)return;
-tasks.push({cat,pri,text,done:false});
-taskInput.value="";
-save();
-renderTasks();
-updateDashboard();
-}
+  await addDoc(tasksCollection,{
+    cat, pri, text, done:false, created:Date.now()
+  });
 
-function toggleTask(i){
-tasks[i].done=!tasks[i].done;
-save();
-renderTasks();
-updateDashboard();
-}
+  taskInput.value="";
+};
 
-function deleteTask(i){
-tasks.splice(i,1);
-save();
-renderTasks();
-updateDashboard();
-}
-
-function renderTasks(){
-taskList.innerHTML="";
-tasks.forEach((t,i)=>{
-taskList.innerHTML+=`
-<div class="card">
-<input type="checkbox" ${t.done?"checked":""}
-onclick="toggleTask(${i})">
-<b>${t.text}</b> (${t.cat} - ${t.pri})
-<button onclick="deleteTask(${i})" style="float:right;background:var(--danger);border:none;color:white;border-radius:6px;">X</button>
-</div>`;
-});
-}
-
-/* CALENDAR */
-
-function renderCalendar(){
-calendarGrid.innerHTML="";
-let now=new Date();
-let year=now.getFullYear();
-let month=now.getMonth();
-let first=new Date(year,month,1).getDay();
-let days=new Date(year,month+1,0).getDate();
-
-for(let i=0;i<first;i++){
-calendarGrid.innerHTML+=`<div></div>`;
-}
-
-for(let d=1;d<=days;d++){
-let full=`${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-let events=contents.filter(c=>c.date===full).map(c=>c.text).join("<br>");
-calendarGrid.innerHTML+=`
-<div class="day">
-<b>${d}</b><br>${events}
-</div>`;
-}
-}
-
-function addContent(){
-let date=contentDate.value;
-let text=contentText.value;
-if(!date||!text)return;
-contents.push({date,text});
-contentText.value="";
-save();
-renderCalendar();
-}
-
-/* VIDEOS */
-
-function addVideo(){
-let title=videoTitle.value;
-let script=videoScript.value;
-if(!title)return;
-
-videos.push({
-title,
-script,
-stages:{scripting:true,shooting:false,editing:false,thumbnail:false,uploaded:false}
+/* REALTIME LISTENER */
+onSnapshot(tasksCollection,(snapshot)=>{
+  taskList.innerHTML="";
+  snapshot.forEach((docSnap)=>{
+    let t = docSnap.data();
+    taskList.innerHTML+=`
+    <div class="card">
+      <input type="checkbox" ${t.done?"checked":""}
+      onclick="toggleTask('${docSnap.id}', ${t.done})">
+      <b>${t.text}</b> (${t.cat} - ${t.pri})
+      <button onclick="deleteTask('${docSnap.id}')"
+      style="float:right;background:red;color:white;border:none;border-radius:6px;">X</button>
+    </div>`;
+  });
 });
 
-videoTitle.value="";
-videoScript.value="";
-save();
-renderVideos();
-updateDashboard();
-}
+/* TOGGLE */
+window.toggleTask = async function(id,current){
+  await updateDoc(doc(db,"tasks",id),{
+    done:!current
+  });
+};
 
-function toggleStage(i,stage){
-videos[i].stages[stage]=!videos[i].stages[stage];
-save();
-renderVideos();
-updateDashboard();
-}
-
-function deleteVideo(i){
-videos.splice(i,1);
-save();
-renderVideos();
-updateDashboard();
-}
-
-function renderVideos(){
-videoList.innerHTML="";
-videos.forEach((v,i)=>{
-let completed=Object.values(v.stages).filter(Boolean).length;
-let percent=Math.round((completed/5)*100);
-
-videoList.innerHTML+=`
-<div class="card">
-<h3>${v.title}</h3>
-<textarea rows="4" onchange="videos[${i}].script=this.value;save();">${v.script}</textarea>
-
-<label><input type="checkbox" ${v.stages.scripting?"checked":""}
-onclick="toggleStage(${i},'scripting')"> Scripting</label><br>
-<label><input type="checkbox" ${v.stages.shooting?"checked":""}
-onclick="toggleStage(${i},'shooting')"> Shooting</label><br>
-<label><input type="checkbox" ${v.stages.editing?"checked":""}
-onclick="toggleStage(${i},'editing')"> Editing</label><br>
-<label><input type="checkbox" ${v.stages.thumbnail?"checked":""}
-onclick="toggleStage(${i},'thumbnail')"> Thumbnail</label><br>
-<label><input type="checkbox" ${v.stages.uploaded?"checked":""}
-onclick="toggleStage(${i},'uploaded')"> Uploaded</label>
-
-<div class="progressbar">
-<div class="progress" style="width:${percent}%"></div>
-</div>
-<b>${percent}% Complete</b>
-
-<button onclick="deleteVideo(${i})" style="background:var(--danger);border:none;color:white;border-radius:6px;margin-top:6px;">Delete</button>
-</div>`;
-});
-}
-
-/* DASHBOARD */
-
-function updateDashboard(){
-let high=tasks.filter(t=>t.pri==="High"&&!t.done);
-priorityAlert.innerHTML=
-high.length?`<div class="alert">⚠ ${high.length} High Priority Tasks Pending</div>`:"";
-
-let total=tasks.length;
-let done=tasks.filter(t=>t.done).length;
-let overall=total?Math.round((done/total)*100):0;
-
-progressCircles.innerHTML=generateCircle("Overall",overall);
-
-let scripted=videos.filter(v=>v.stages.scripting).length;
-let shooting=videos.filter(v=>v.stages.shooting).length;
-let editing=videos.filter(v=>v.stages.editing).length;
-let uploaded=videos.filter(v=>v.stages.uploaded).length;
-
-videoStats.innerHTML=`
-📝 Scripted: ${scripted}<br>
-🎥 Shooting: ${shooting}<br>
-✂ Editing: ${editing}<br>
-🚀 Uploaded: ${uploaded}
-`;
-}
-
-function generateCircle(label,p){
-let r=50;
-let circ=2*Math.PI*r;
-let offset=circ-(circ*p)/100;
-return `
-<div class="circle">
-<svg width="120" height="120">
-<circle cx="60" cy="60" r="${r}" stroke="#334155" stroke-width="10" fill="none"/>
-<circle cx="60" cy="60" r="${r}" stroke="var(--accent)" stroke-width="10"
-fill="none" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
-stroke-linecap="round"/>
-</svg>
-${label}<br>${p}%
-</div>`;
-}
-
-/* INIT */
-
-renderTasks();
-renderVideos();
-renderCalendar();
-updateDashboard();
+/* DELETE */
+window.deleteTask = async function(id){
+  await deleteDoc(doc(db,"tasks",id));
+};
 
 </script>
 </body>
