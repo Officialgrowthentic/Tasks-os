@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Naman OS 3.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+--bg:#111827;
+--card:#1f2937;
+--text:white;
+--accent:#00f5d4;
+}
+
+.light{
+--bg:#f3f4f6;
+--card:white;
+--text:#111827;
+--accent:#2563eb;
+}
+
+body{
+margin:0;
+font-family:'Inter',sans-serif;
+background:var(--bg);
+color:var(--text);
+transition:0.3s;
+}
+
+.nav{
+display:flex;
+justify-content:space-between;
+padding:15px;
+background:var(--card);
+position:sticky;
+top:0;
+}
+
+.nav button{
+background:none;
+border:none;
+color:var(--text);
+font-weight:600;
+cursor:pointer;
+}
+
+.section{display:none;padding:20px;}
+.active{display:block;}
+
+.card{
+background:var(--card);
+padding:15px;
+border-radius:15px;
+margin-top:15px;
+}
+
+input,select,textarea{
+width:100%;
+padding:10px;
+margin-top:10px;
+border-radius:10px;
+border:none;
+}
+
+button.action{
+background:var(--accent);
+border:none;
+padding:10px;
+margin-top:10px;
+border-radius:10px;
+cursor:pointer;
+font-weight:600;
+color:white;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+gap:15px;
+}
+
+.circle{
+width:120px;
+height:120px;
+position:relative;
+margin:auto;
+}
+
+.circle svg{transform:rotate(-90deg);}
+
+.circle span{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+font-weight:600;
+}
+
+.calendar{
+display:grid;
+grid-template-columns:repeat(7,1fr);
+gap:5px;
+margin-top:15px;
+}
+
+.day{
+background:var(--card);
+padding:10px;
+border-radius:10px;
+min-height:60px;
+font-size:12px;
+}
+
+.alert{
+background:#dc2626;
+padding:10px;
+border-radius:10px;
+margin-bottom:10px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="nav">
+<div>
+<button onclick="showSection('dashboard')">Dashboard</button>
+<button onclick="showSection('tasks')">Tasks</button>
+<button onclick="showSection('calendar')">Calendar</button>
+<button onclick="showSection('videos')">Videos</button>
+</div>
+<button onclick="toggleMode()">🌗</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="section active">
+<h2>Dashboard</h2>
+<div id="priorityAlert"></div>
+
+<div class="grid" id="progressCircles"></div>
+
+<div class="card" id="videoStats"></div>
+</div>
+
+<!-- TASKS -->
+<div id="tasks" class="section">
+<h2>Task Manager</h2>
+
+<select id="taskCategory">
+<option>Fitness</option>
+<option>Business</option>
+<option>Work</option>
+<option>General</option>
+</select>
+
+<select id="taskPriority">
+<option>Low</option>
+<option>Medium</option>
+<option>High</option>
+</select>
+
+<input type="text" id="taskInput" placeholder="Enter task">
+
+<button class="action" onclick="addTask()">Add Task</button>
+
+<div id="taskList"></div>
+</div>
+
+<!-- CALENDAR -->
+<div id="calendar" class="section">
+<h2>Content Calendar</h2>
+<input type="month" id="monthPicker" onchange="renderCalendar()">
+<input type="date" id="contentDate">
+<input type="text" id="contentText" placeholder="Video Idea">
+<button class="action" onclick="addContent()">Add</button>
+<div class="calendar" id="calendarGrid"></div>
+</div>
+
+<!-- VIDEOS -->
+<div id="videos" class="section">
+<h2>Video Pipeline</h2>
+
+<input type="text" id="videoTitle" placeholder="Video Title">
+<select id="videoStage">
+<option>Scripting</option>
+<option>Shooting</option>
+<option>Editing</option>
+<option>Thumbnail</option>
+<option>Uploaded</option>
+</select>
+<button class="action" onclick="addVideo()">Save</button>
+
+<div id="videoList"></div>
+</div>
+
+<script>
+
+let tasks=JSON.parse(localStorage.getItem("tasks"))||[];
+let contents=JSON.parse(localStorage.getItem("contents"))||[];
+let videos=JSON.parse(localStorage.getItem("videos"))||[];
+
+function save(){
+localStorage.setItem("tasks",JSON.stringify(tasks));
+localStorage.setItem("contents",JSON.stringify(contents));
+localStorage.setItem("videos",JSON.stringify(videos));
+}
+
+function showSection(id){
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+updateDashboard();
+}
+
+function toggleMode(){
+document.body.classList.toggle("light");
+}
+
+function addTask(){
+let cat=document.getElementById("taskCategory").value;
+let pri=document.getElementById("taskPriority").value;
+let text=document.getElementById("taskInput").value;
+if(!text)return;
+tasks.push({cat,pri,text,done:false});
+document.getElementById("taskInput").value="";
+save();renderTasks();updateDashboard();
+}
+
+function renderTasks(){
+let list=document.getElementById("taskList");
+list.innerHTML="";
+tasks.forEach((t,i)=>{
+let div=document.createElement("div");
+div.className="card";
+div.innerHTML=`
+<b>${t.cat}</b> (${t.pri})
+<br>${t.text}
+<br>
+<button onclick="toggleTask(${i})">✔</button>
+`;
+list.appendChild(div);
+});
+}
+
+function toggleTask(i){
+tasks[i].done=!tasks[i].done;
+save();renderTasks();updateDashboard();
+}
+
+function updateDashboard(){
+let alertBox="";
+let high=tasks.filter(t=>t.pri==="High"&&!t.done);
+if(high.length){
+alertBox=`<div class="alert">⚠ ${high.length} High Priority Tasks Pending!</div>`;
+}
+document.getElementById("priorityAlert").innerHTML=alertBox;
+
+let cats=["Fitness","Business","Work","General"];
+let grid="";
+cats.forEach(cat=>{
+let total=tasks.filter(t=>t.cat===cat).length;
+let done=tasks.filter(t=>t.cat===cat&&t.done).length;
+let p=total?Math.round((done/total)*100):0;
+grid+=circleHTML(cat,p);
+});
+document.getElementById("progressCircles").innerHTML=grid;
+
+let scripted=videos.filter(v=>v.stage==="Scripting").length;
+let shooting=videos.filter(v=>v.stage==="Shooting").length;
+let editing=videos.filter(v=>v.stage==="Editing").length;
+let uploaded=videos.filter(v=>v.stage==="Uploaded").length;
+
+document.getElementById("videoStats").innerHTML=`
+📝 Scripted: ${scripted}<br>
+🎥 Shooting: ${shooting}<br>
+✂ Editing: ${editing}<br>
+🚀 Uploaded: ${uploaded}
+`;
+}
+
+function circleHTML(label,p){
+let r=50;
+let circ=2*Math.PI*r;
+let offset=circ-(circ*p)/100;
+return `
+<div class="circle">
+<svg width="120" height="120">
+<circle cx="60" cy="60" r="${r}" stroke="#374151" stroke-width="10" fill="none"/>
+<circle cx="60" cy="60" r="${r}" stroke="var(--accent)" stroke-width="10"
+fill="none" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
+stroke-linecap="round"/>
+</svg>
+<span>${label}<br>${p}%</span>
+</div>
+`;
+}
+
+function addContent(){
+let date=document.getElementById("contentDate").value;
+let text=document.getElementById("contentText").value;
+if(!date||!text)return;
+contents.push({date,text});
+save();renderCalendar();
+}
+
+function renderCalendar(){
+let month=document.getElementById("monthPicker").value;
+if(!month)month=new Date().toISOString().slice(0,7);
+let [year,m]=month.split("-");
+let first=new Date(year,m-1,1).getDay();
+let days=new Date(year,m,0).getDate();
+let grid="";
+for(let i=0;i<first;i++)grid+=`<div></div>`;
+for(let d=1;d<=days;d++){
+let full=`${month}-${String(d).padStart(2,"0")}`;
+let events=contents.filter(c=>c.date===full).map(c=>c.text).join("<br>");
+grid+=`<div class="day"><b>${d}</b><br>${events}</div>`;
+}
+document.getElementById("calendarGrid").innerHTML=grid;
+}
+
+function addVideo(){
+let title=document.getElementById("videoTitle").value;
+let stage=document.getElementById("videoStage").value;
+if(!title)return;
+videos.push({title,stage});
+save();renderVideos();updateDashboard();
+}
+
+function renderVideos(){
+let list=document.getElementById("videoList");
+list.innerHTML="";
+videos.forEach(v=>{
+list.innerHTML+=`<div class="card"><b>${v.title}</b><br>${v.stage}</div>`;
+});
+}
+
+renderTasks();
+renderVideos();
+renderCalendar();
+updateDashboard();
+
+</script>
+</body>
+</html>
