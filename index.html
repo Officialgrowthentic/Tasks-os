@@ -251,6 +251,74 @@ function renderVideos(){
 /* INIT */
 renderCalendar();
 renderVideos();
+<!-- FIREBASE CDN (MUST COME FIRST) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+/* ---------------- FIREBASE INIT ---------------- */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA9Ngg4cZ6H0gOePfHZ4GOg1_YZe5qZS7Y",
+  authDomain: "progress-app-6e9e6.firebaseapp.com",
+  projectId: "progress-app-6e9e6",
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const tasksCollection = db.collection("tasks");
+
+let tasks = [];
+
+function addTask(){
+  let cat = taskCategory.value;
+  let pri = taskPriority.value;
+  let text = taskInput.value;
+  if(!text) return;
+
+  tasksCollection.add({
+    cat,
+    pri,
+    text,
+    done:false,
+    created: Date.now()
+  });
+
+  taskInput.value="";
+}
+
+function toggleTask(index){
+  let task = tasks[index];
+  tasksCollection.doc(task.id).update({
+    done: !task.done
+  });
+}
+
+function deleteTask(index){
+  let task = tasks[index];
+  tasksCollection.doc(task.id).delete();
+}
+
+tasksCollection.onSnapshot(snapshot=>{
+  tasks=[];
+  snapshot.forEach(doc=>{
+    tasks.push({id:doc.id, ...doc.data()});
+  });
+  renderTasks();
+});
+
+function renderTasks(){
+  taskList.innerHTML="";
+  tasks.forEach((t,i)=>{
+    taskList.innerHTML+=`
+    <div class="card">
+      <input type="checkbox" ${t.done?"checked":""}
+      onclick="toggleTask(${i})">
+      <b>${t.text}</b> (${t.cat} - ${t.pri})
+      <button onclick="deleteTask(${i})"
+      style="float:right;background:red;color:white;border:none;">X</button>
+    </div>`;
+  });
+}
 </script>
 </body>
 </html>
