@@ -103,11 +103,12 @@ button.action{background:var(--accent);border:none;padding:10px;margin-top:10px;
 <div id="videoList"></div>
 </div>
 
-<script type="module">
+<!-- FIREBASE CDN -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc }
-from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+<script>
+/* ---------------- FIREBASE INIT ---------------- */
 
 const firebaseConfig = {
   apiKey: "AIzaSyA9Ngg4cZ6H0gOePfHZ4GOg1_YZe5qZS7Y",
@@ -118,116 +119,137 @@ const firebaseConfig = {
   appId: "1:867817123277:web:6d8fd798a621684295a884"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const tasksCollection = collection(db, "tasks");
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const tasksCollection = db.collection("tasks");
 
-let tasks=[]; // 🔥 No localStorage for tasks
-let contents=JSON.parse(localStorage.getItem("contents"))||[];
-let videos=JSON.parse(localStorage.getItem("videos"))||[];
+/* ---------------- GLOBAL STATE ---------------- */
+
+let tasks = [];
+let contents = JSON.parse(localStorage.getItem("contents")) || [];
+let videos = JSON.parse(localStorage.getItem("videos")) || [];
 
 function saveLocal(){
-localStorage.setItem("contents",JSON.stringify(contents));
-localStorage.setItem("videos",JSON.stringify(videos));
+  localStorage.setItem("contents", JSON.stringify(contents));
+  localStorage.setItem("videos", JSON.stringify(videos));
 }
 
-/* -------- TASKS (Firebase Sync) -------- */
+/* ---------------- TASKS (REAL TIME SYNC) ---------------- */
 
-window.addTask = async function(){
-let cat=taskCategory.value;
-let pri=taskPriority.value;
-let text=taskInput.value;
-if(!text)return;
-await addDoc(tasksCollection,{cat,pri,text,done:false,created:Date.now()});
-taskInput.value="";
-};
+function addTask(){
+  let cat = taskCategory.value;
+  let pri = taskPriority.value;
+  let text = taskInput.value;
+  if(!text) return;
 
-window.toggleTask = async function(i){
-let task=tasks[i];
-await updateDoc(doc(db,"tasks",task.id),{done:!task.done});
-};
+  tasksCollection.add({
+    cat,
+    pri,
+    text,
+    done:false,
+    created: Date.now()
+  });
 
-window.deleteTask = async function(i){
-let task=tasks[i];
-await deleteDoc(doc(db,"tasks",task.id));
-};
+  taskInput.value="";
+}
+
+function toggleTask(index){
+  let task = tasks[index];
+  tasksCollection.doc(task.id).update({
+    done: !task.done
+  });
+}
+
+function deleteTask(index){
+  let task = tasks[index];
+  tasksCollection.doc(task.id).delete();
+}
+
+tasksCollection.onSnapshot(snapshot=>{
+  tasks=[];
+  snapshot.forEach(doc=>{
+    tasks.push({id:doc.id, ...doc.data()});
+  });
+  renderTasks();
+});
 
 function renderTasks(){
-taskList.innerHTML="";
-tasks.forEach((t,i)=>{
-taskList.innerHTML+=`
-<div class="card">
-<input type="checkbox" ${t.done?"checked":""}
-onclick="toggleTask(${i})">
-<b>${t.text}</b> (${t.cat} - ${t.pri})
-<button onclick="deleteTask(${i})" style="float:right;background:var(--danger);border:none;color:white;border-radius:6px;">X</button>
-</div>`;
-});
+  taskList.innerHTML="";
+  tasks.forEach((t,i)=>{
+    taskList.innerHTML+=`
+    <div class="card">
+      <input type="checkbox" ${t.done?"checked":""}
+      onclick="toggleTask(${i})">
+      <b>${t.text}</b> (${t.cat} - ${t.pri})
+      <button onclick="deleteTask(${i})"
+      style="float:right;background:var(--danger);border:none;color:white;border-radius:6px;">X</button>
+    </div>`;
+  });
 }
 
-onSnapshot(tasksCollection,(snapshot)=>{
-tasks=[];
-snapshot.forEach(docSnap=>{
-tasks.push({id:docSnap.id,...docSnap.data()});
-});
-renderTasks();
-updateDashboard();
-});
-
-/* -------- Calendar & Videos (Local) -------- */
+/* ---------------- CALENDAR (LOCAL) ---------------- */
 
 function addContent(){
-let date=contentDate.value;
-let text=contentText.value;
-if(!date||!text)return;
-contents.push({date,text});
-contentText.value="";
-saveLocal();
-renderCalendar();
-}
-
-function addVideo(){
-let title=videoTitle.value;
-let script=videoScript.value;
-if(!title)return;
-videos.push({title,script});
-videoTitle.value="";
-videoScript.value="";
-saveLocal();
-renderVideos();
-updateDashboard();
+  let date=contentDate.value;
+  let text=contentText.value;
+  if(!date||!text)return;
+  contents.push({date,text});
+  contentText.value="";
+  saveLocal();
+  renderCalendar();
 }
 
 function renderCalendar(){
-calendarGrid.innerHTML="";
-let now=new Date();
-let year=now.getFullYear();
-let month=now.getMonth();
-let first=new Date(year,month,1).getDay();
-let days=new Date(year,month+1,0).getDate();
-for(let i=0;i<first;i++)calendarGrid.innerHTML+=`<div></div>`;
-for(let d=1;d<=days;d++){
-let full=`${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-let events=contents.filter(c=>c.date===full).map(c=>c.text).join("<br>");
-calendarGrid.innerHTML+=`<div class="day"><b>${d}</b><br>${events}</div>`;
+  calendarGrid.innerHTML="";
+  let now=new Date();
+  let year=now.getFullYear();
+  let month=now.getMonth();
+  let first=new Date(year,month,1).getDay();
+  let days=new Date(year,month+1,0).getDate();
+
+  for(let i=0;i<first;i++){
+    calendarGrid.innerHTML+=`<div></div>`;
+  }
+
+  for(let d=1;d<=days;d++){
+    let full=`${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    let events=contents.filter(c=>c.date===full).map(c=>c.text).join("<br>");
+    calendarGrid.innerHTML+=`
+      <div class="day">
+        <b>${d}</b><br>${events}
+      </div>`;
+  }
 }
+
+/* ---------------- VIDEOS (LOCAL) ---------------- */
+
+function addVideo(){
+  let title=videoTitle.value;
+  let script=videoScript.value;
+  if(!title)return;
+
+  videos.push({title,script});
+  videoTitle.value="";
+  videoScript.value="";
+  saveLocal();
+  renderVideos();
 }
 
 function renderVideos(){
-videoList.innerHTML="";
-videos.forEach((v,i)=>{
-videoList.innerHTML+=`
-<div class="card">
-<h3>${v.title}</h3>
-<textarea rows="4" onchange="videos[${i}].script=this.value;saveLocal();">${v.script}</textarea>
-</div>`;
-});
+  videoList.innerHTML="";
+  videos.forEach((v,i)=>{
+    videoList.innerHTML+=`
+    <div class="card">
+      <h3>${v.title}</h3>
+      <textarea rows="4"
+      onchange="videos[${i}].script=this.value;saveLocal();">${v.script}</textarea>
+    </div>`;
+  });
 }
 
 /* INIT */
 renderCalendar();
 renderVideos();
-
 </script>
 </body>
 </html>
