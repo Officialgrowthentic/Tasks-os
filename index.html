@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Naman OS 8.0</title>
+<title>Naman OS 9.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
@@ -20,68 +20,21 @@
 --accent:#2563eb;
 --danger:#dc2626;
 }
-body{
-margin:0;
-font-family:'Inter',sans-serif;
-background:var(--bg);
-color:var(--text);
-}
-.nav{
-display:flex;
-justify-content:space-between;
-padding:15px;
-background:var(--card);
-}
-.nav button{
-background:none;
-border:none;
-color:var(--text);
-font-weight:600;
-cursor:pointer;
-margin-right:10px;
-}
+body{margin:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
+.nav{display:flex;justify-content:space-between;padding:15px;background:var(--card);}
+.nav button{background:none;border:none;color:var(--text);font-weight:600;cursor:pointer;margin-right:10px;}
 .section{display:none;padding:20px;}
 .active{display:block;}
-.card{
-background:var(--card);
-padding:15px;
-border-radius:15px;
-margin-top:15px;
-}
-input,select,textarea{
-width:100%;
-padding:10px;
-margin-top:10px;
-border-radius:10px;
-border:none;
-}
-button.action{
-background:var(--accent);
-border:none;
-padding:10px;
-margin-top:10px;
-border-radius:10px;
-cursor:pointer;
-font-weight:600;
-color:white;
-}
-.progressbar{
-height:8px;
-background:#334155;
-border-radius:10px;
-overflow:hidden;
-margin-top:8px;
-}
-.progress{
-height:100%;
-background:var(--accent);
-}
-.stat-box{
-background:var(--card);
-padding:15px;
-border-radius:15px;
-margin-top:15px;
-}
+.card{background:var(--card);padding:15px;border-radius:15px;margin-top:15px;}
+input,select,textarea{width:100%;padding:10px;margin-top:10px;border-radius:10px;border:none;}
+button.action{background:var(--accent);border:none;padding:10px;margin-top:10px;border-radius:10px;cursor:pointer;color:white;font-weight:600;}
+.progressbar{height:8px;background:#334155;border-radius:10px;overflow:hidden;margin-top:8px;}
+.progress{height:100%;background:var(--accent);}
+.circle{width:130px;height:130px;position:relative;margin:10px;}
+.circle svg{transform:rotate(-90deg);}
+.circle span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:700;}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px;}
+.day{background:var(--card);padding:6px;border-radius:10px;min-height:70px;font-size:12px;}
 </style>
 </head>
 <body>
@@ -91,6 +44,7 @@ margin-top:15px;
 <button onclick="showSection('dashboard')">Dashboard</button>
 <button onclick="showSection('tasks')">Tasks</button>
 <button onclick="showSection('videos')">Videos</button>
+<button onclick="showSection('calendar')">Calendar</button>
 </div>
 <button onclick="toggleMode()">🌗</button>
 </div>
@@ -98,13 +52,14 @@ margin-top:15px;
 <!-- DASHBOARD -->
 <div id="dashboard" class="section active">
 <h2>Dashboard</h2>
-<div id="taskStats" class="stat-box"></div>
-<div id="videoStats" class="stat-box"></div>
+<select id="monthFilter" onchange="updateDashboard()"></select>
+<div id="circleStats" style="display:flex;flex-wrap:wrap;"></div>
+<div id="videoBreakdown" class="card"></div>
 </div>
 
 <!-- TASKS -->
 <div id="tasks" class="section">
-<h2>Tasks (Realtime)</h2>
+<h2>Daily Tasks</h2>
 
 <select id="taskCategory">
 <option>Fitness</option>
@@ -122,198 +77,226 @@ margin-top:15px;
 <input type="text" id="taskInput" placeholder="Enter task">
 <button class="action" onclick="addTask()">Add Task</button>
 
+<button onclick="viewYesterday()">View Yesterday</button>
+<button onclick="viewToday()">View Today</button>
+
 <div id="taskList"></div>
 </div>
 
 <!-- VIDEOS -->
 <div id="videos" class="section">
-<h2>Video Pipeline (Realtime)</h2>
+<h2>Video Pipeline</h2>
 
 <input type="text" id="videoTitle" placeholder="Video Title">
-<textarea id="videoScript" rows="5" placeholder="Write script..."></textarea>
+<input type="date" id="publishDate">
+<textarea id="videoScript" rows="4" placeholder="Script..."></textarea>
 <button class="action" onclick="addVideo()">Add Video</button>
 
 <div id="videoList"></div>
 </div>
 
-<!-- FIREBASE CDN -->
+<!-- CALENDAR -->
+<div id="calendar" class="section">
+<h2>Content Calendar</h2>
+<div class="calendar" id="calendarGrid"></div>
+</div>
+
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-
-/* FIREBASE INIT */
-const firebaseConfig = {
-  apiKey: "AIzaSyA9Ngg4cZ6H0gOePfHZ4GOg1_YZe5qZS7Y",
-  authDomain: "progress-app-6e9e6.firebaseapp.com",
-  projectId: "progress-app-6e9e6"
+const firebaseConfig={
+apiKey:"AIzaSyA9Ngg4cZ6H0gOePfHZ4GOg1_YZe5qZS7Y",
+authDomain:"progress-app-6e9e6.firebaseapp.com",
+projectId:"progress-app-6e9e6"
 };
-
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db=firebase.firestore();
+const tasksRef=db.collection("tasks");
+const videosRef=db.collection("videos");
 
-const tasksRef = db.collection("tasks");
-const videosRef = db.collection("videos");
+let currentDate=new Date().toISOString().slice(0,10);
+let viewingDate=currentDate;
+let tasks=[],videos=[];
 
-let tasks = [];
-let videos = [];
-
-/* NAVIGATION */
-
+/* NAV */
 function showSection(id){
 document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
 document.getElementById(id).classList.add("active");
 }
+function toggleMode(){document.body.classList.toggle("light");}
 
-function toggleMode(){
-document.body.classList.toggle("light");
-}
-
-/* ================= TASKS ================= */
-
+/* TASKS */
 function addTask(){
-if(!taskInput.value) return;
-
+if(!taskInput.value)return;
 tasksRef.add({
-text: taskInput.value,
-cat: taskCategory.value,
-pri: taskPriority.value,
+text:taskInput.value,
+cat:taskCategory.value,
+pri:taskPriority.value,
 done:false,
-created: Date.now()
+date:currentDate
 });
-
 taskInput.value="";
 }
+function toggleTask(id,current){tasksRef.doc(id).update({done:!current});}
+function deleteTask(id){tasksRef.doc(id).delete();}
 
-function toggleTask(id,current){
-tasksRef.doc(id).update({done:!current});
-}
-
-function deleteTask(id){
-tasksRef.doc(id).delete();
-}
-
-tasksRef.orderBy("created").onSnapshot(snapshot=>{
+tasksRef.onSnapshot(snapshot=>{
 tasks=[];
-taskList.innerHTML="";
-snapshot.forEach(doc=>{
-let t = doc.data();
-tasks.push({id:doc.id,...t});
-taskList.innerHTML+=`
-<div class="card">
-<input type="checkbox" ${t.done?"checked":""}
-onclick="toggleTask('${doc.id}',${t.done})">
-<b>${t.text}</b> (${t.cat}-${t.pri})
-<button onclick="deleteTask('${doc.id}')"
-style="float:right;background:red;color:white;border:none;">X</button>
-</div>`;
-});
+snapshot.forEach(doc=>tasks.push({id:doc.id,...doc.data()}));
+renderTasks();
+checkHighPriority();
 updateDashboard();
 });
 
-/* ================= VIDEOS ================= */
+function renderTasks(){
+taskList.innerHTML="";
+tasks.filter(t=>t.date===viewingDate).forEach(t=>{
+taskList.innerHTML+=`
+<div class="card">
+<input type="checkbox" ${t.done?"checked":""}
+onclick="toggleTask('${t.id}',${t.done})">
+<b>${t.text}</b> (${t.cat}-${t.pri})
+<button onclick="deleteTask('${t.id}')"
+style="float:right;background:red;color:white;border:none;">X</button>
+</div>`;
+});
+}
 
+function viewYesterday(){
+let d=new Date(currentDate);
+d.setDate(d.getDate()-1);
+viewingDate=d.toISOString().slice(0,10);
+renderTasks();
+}
+function viewToday(){viewingDate=currentDate;renderTasks();}
+
+function checkHighPriority(){
+let high=tasks.filter(t=>t.date===currentDate && t.pri==="High" && !t.done);
+if(high.length>0){
+alert("⚠ High Priority Task Pending!");
+}
+}
+
+/* VIDEOS */
 function addVideo(){
-if(!videoTitle.value) return;
-
+if(!videoTitle.value||!publishDate.value)return;
 videosRef.add({
-title: videoTitle.value,
-script: videoScript.value,
+title:videoTitle.value,
+script:videoScript.value,
+publishDate:publishDate.value,
 stages:{
 scripting:true,
 shooting:false,
 editing:false,
 thumbnail:false,
 posting:false
-},
-created: Date.now()
-});
-
-videoTitle.value="";
-videoScript.value="";
 }
-
-function updateScript(id,value){
-videosRef.doc(id).update({script:value});
+});
+videoTitle.value="";videoScript.value="";
 }
 
 function toggleStage(id,stage,current){
 videosRef.doc(id).update({[`stages.${stage}`]:!current});
 }
+function updateScript(id,value){videosRef.doc(id).update({script:value});}
+function deleteVideo(id){videosRef.doc(id).delete();}
 
-function deleteVideo(id){
-videosRef.doc(id).delete();
-}
-
-videosRef.orderBy("created").onSnapshot(snapshot=>{
+videosRef.onSnapshot(snapshot=>{
 videos=[];
 videoList.innerHTML="";
 snapshot.forEach(doc=>{
-let v = doc.data();
-videos.push({id:doc.id,...v});
-
-let completed = Object.values(v.stages).filter(Boolean).length;
-let percent = Math.round((completed/5)*100);
+let v=doc.data();videos.push({id:doc.id,...v});
+let completed=Object.values(v.stages).filter(Boolean).length;
+let percent=Math.round((completed/5)*100);
 
 videoList.innerHTML+=`
 <div class="card">
 <h3>${v.title}</h3>
-
-<textarea rows="4"
-onchange="updateScript('${doc.id}',this.value)">${v.script||""}</textarea>
-
-<label><input type="checkbox" ${v.stages.scripting?"checked":""}
-onclick="toggleStage('${doc.id}','scripting',${v.stages.scripting})"> Scripting</label><br>
-
-<label><input type="checkbox" ${v.stages.shooting?"checked":""}
-onclick="toggleStage('${doc.id}','shooting',${v.stages.shooting})"> Shooting</label><br>
-
-<label><input type="checkbox" ${v.stages.editing?"checked":""}
-onclick="toggleStage('${doc.id}','editing',${v.stages.editing})"> Editing</label><br>
-
-<label><input type="checkbox" ${v.stages.thumbnail?"checked":""}
-onclick="toggleStage('${doc.id}','thumbnail',${v.stages.thumbnail})"> Thumbnail</label><br>
-
-<label><input type="checkbox" ${v.stages.posting?"checked":""}
-onclick="toggleStage('${doc.id}','posting',${v.stages.posting})"> Posting</label>
-
-<div class="progressbar">
-<div class="progress" style="width:${percent}%"></div>
-</div>
-
-<b>${percent}% Complete</b>
-
+<small>${v.publishDate}</small>
+<textarea onchange="updateScript('${doc.id}',this.value)">${v.script||""}</textarea>
+${Object.keys(v.stages).map(stage=>`
+<label><input type="checkbox"
+${v.stages[stage]?"checked":""}
+onclick="toggleStage('${doc.id}','${stage}',${v.stages[stage]})">
+${stage}</label><br>`).join("")}
+<div class="progressbar"><div class="progress" style="width:${percent}%"></div></div>
+<b>${percent}%</b>
 <button onclick="deleteVideo('${doc.id}')"
-style="margin-top:10px;background:red;color:white;border:none;">Delete</button>
+style="background:red;color:white;border:none;margin-top:8px;">Delete</button>
 </div>`;
 });
+renderCalendar();
 updateDashboard();
 });
 
-/* ================= DASHBOARD ================= */
-
+/* DASHBOARD */
 function updateDashboard(){
-let totalTasks = tasks.length;
-let completedTasks = tasks.filter(t=>t.done).length;
-let taskPercent = totalTasks ? Math.round((completedTasks/totalTasks)*100) : 0;
+let month=document.getElementById("monthFilter").value;
+if(!month){
+let now=new Date();
+month=now.toISOString().slice(0,7);
+}
+let monthVideos=videos.filter(v=>v.publishDate?.startsWith(month));
+let posted=monthVideos.filter(v=>v.stages.posting).length;
+let total=monthVideos.length;
+let percent=total?Math.round((posted/total)*100):0;
 
-taskStats.innerHTML = `
-<h3>Tasks</h3>
-Total: ${totalTasks}<br>
-Completed: ${completedTasks}<br>
-Progress: ${taskPercent}%
-`;
-
-let totalVideos = videos.length;
-let postedVideos = videos.filter(v=>v.stages.posting).length;
-
-videoStats.innerHTML = `
-<h3>Videos</h3>
-Total: ${totalVideos}<br>
-Posted: ${postedVideos}
+circleStats.innerHTML=generateCircle("Posted",percent);
+videoBreakdown.innerHTML=`
+Total Videos: ${total}<br>
+Scripted: ${monthVideos.filter(v=>v.stages.scripting).length}<br>
+Shooting: ${monthVideos.filter(v=>v.stages.shooting).length}<br>
+Editing: ${monthVideos.filter(v=>v.stages.editing).length}<br>
+Thumbnail: ${monthVideos.filter(v=>v.stages.thumbnail).length}<br>
+Posted: ${posted}
 `;
 }
 
+function generateCircle(label,p){
+let r=55;
+let circ=2*Math.PI*r;
+let offset=circ-(circ*p)/100;
+return`
+<div class="circle">
+<svg width="130" height="130">
+<circle cx="65" cy="65" r="${r}" stroke="#334155" stroke-width="10" fill="none"/>
+<circle cx="65" cy="65" r="${r}" stroke="var(--accent)" stroke-width="10"
+fill="none" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
+stroke-linecap="round"/>
+</svg>
+<span>${label}<br>${p}%</span>
+</div>`;
+}
+
+/* CALENDAR */
+function renderCalendar(){
+calendarGrid.innerHTML="";
+let now=new Date();
+let year=now.getFullYear();
+let month=now.getMonth();
+let days=new Date(year,month+1,0).getDate();
+for(let d=1;d<=days;d++){
+let full=`${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+let vids=videos.filter(v=>v.publishDate===full);
+calendarGrid.innerHTML+=`
+<div class="day">
+<b>${d}</b><br>
+${vids.map(v=>v.title).join("<br>")}
+</div>`;
+}
+}
+
+/* INIT MONTH FILTER */
+let monthSelect=document.getElementById("monthFilter");
+let now=new Date();
+for(let i=0;i<6;i++){
+let d=new Date(now.getFullYear(),now.getMonth()-i,1);
+let val=d.toISOString().slice(0,7);
+monthSelect.innerHTML+=`<option value="${val}">${val}</option>`;
+}
+monthSelect.value=now.toISOString().slice(0,7);
 </script>
 </body>
 </html>
