@@ -2,64 +2,74 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Naman OS 9.0</title>
+<title>Naman OS 10.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 :root{
 --bg:#0f172a;
 --card:#1e293b;
---text:#ffffff;
+--text:#fff;
 --accent:#22d3ee;
 --danger:#ef4444;
 }
 .light{
 --bg:#f1f5f9;
---card:#ffffff;
---text:#0f172a;
+--card:#fff;
+--text:#111;
 --accent:#2563eb;
 --danger:#dc2626;
 }
 body{margin:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
-.nav{display:flex;justify-content:space-between;padding:15px;background:var(--card);}
-.nav button{background:none;border:none;color:var(--text);font-weight:600;cursor:pointer;margin-right:10px;}
+.nav{display:flex;flex-wrap:wrap;gap:8px;padding:15px;background:var(--card);}
+.nav button{background:none;border:none;color:var(--text);cursor:pointer;font-weight:600;}
 .section{display:none;padding:20px;}
-.active{display:block;}
+.active{display:block;animation:fade .3s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
 .card{background:var(--card);padding:15px;border-radius:15px;margin-top:15px;}
-input,select,textarea{width:100%;padding:10px;margin-top:10px;border-radius:10px;border:none;}
-button.action{background:var(--accent);border:none;padding:10px;margin-top:10px;border-radius:10px;cursor:pointer;color:white;font-weight:600;}
-.progressbar{height:8px;background:#334155;border-radius:10px;overflow:hidden;margin-top:8px;}
+input,select,textarea{width:100%;padding:8px;margin-top:6px;border-radius:10px;border:none;}
+button.action{background:var(--accent);border:none;padding:8px;margin-top:8px;border-radius:10px;color:white;cursor:pointer;}
+.progressbar{height:8px;background:#334155;border-radius:10px;overflow:hidden;margin-top:6px;}
 .progress{height:100%;background:var(--accent);}
-.circle{width:130px;height:130px;position:relative;margin:10px;}
+.circle{width:120px;height:120px;position:relative;margin:10px;}
 .circle svg{transform:rotate(-90deg);}
 .circle span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:700;}
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px;}
-.day{background:var(--card);padding:6px;border-radius:10px;min-height:70px;font-size:12px;}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px;}
+.day{background:var(--card);padding:6px;border-radius:8px;min-height:70px;font-size:11px;cursor:pointer;}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;}
+.modal-content{background:var(--card);padding:20px;border-radius:15px;width:90%;max-width:500px;}
 </style>
 </head>
 <body>
 
 <div class="nav">
-<div>
-<button onclick="showSection('dashboard')">Dashboard</button>
-<button onclick="showSection('tasks')">Tasks</button>
-<button onclick="showSection('videos')">Videos</button>
-<button onclick="showSection('calendar')">Calendar</button>
-</div>
+<button onclick="show('dashboard')">Dashboard</button>
+<button onclick="show('tasks')">Tasks</button>
+<button onclick="show('videos')">Videos</button>
+<button onclick="show('calendar')">Calendar</button>
+<button onclick="show('learning')">Learning</button>
+<button onclick="show('revenue')">Revenue</button>
 <button onclick="toggleMode()">🌗</button>
 </div>
 
 <!-- DASHBOARD -->
 <div id="dashboard" class="section active">
 <h2>Dashboard</h2>
-<select id="monthFilter" onchange="updateDashboard()"></select>
-<div id="circleStats" style="display:flex;flex-wrap:wrap;"></div>
-<div id="videoBreakdown" class="card"></div>
+<select id="monthFilter" onchange="refreshAll()"></select>
+<div id="taskCompetition" class="card"></div>
+<div id="videoStats" class="card"></div>
+<div id="financeStats" class="card"></div>
 </div>
 
 <!-- TASKS -->
 <div id="tasks" class="section">
 <h2>Daily Tasks</h2>
+
+<select id="taskOwner">
+<option>Naman</option>
+<option>Prateek</option>
+</select>
 
 <select id="taskCategory">
 <option>Fitness</option>
@@ -68,40 +78,84 @@ button.action{background:var(--accent);border:none;padding:10px;margin-top:10px;
 <option>General</option>
 </select>
 
+<input placeholder="Sub Folder" id="taskSub">
 <select id="taskPriority">
 <option>Low</option>
 <option>Medium</option>
 <option>High</option>
 </select>
 
-<input type="text" id="taskInput" placeholder="Enter task">
+<input placeholder="Task" id="taskText">
 <button class="action" onclick="addTask()">Add Task</button>
 
-<button onclick="viewYesterday()">View Yesterday</button>
-<button onclick="viewToday()">View Today</button>
+<select id="subFilter" onchange="renderTasks()">
+<option value="">All Subfolders</option>
+</select>
 
+<div id="dailyTaskProgress"></div>
 <div id="taskList"></div>
 </div>
 
 <!-- VIDEOS -->
 <div id="videos" class="section">
 <h2>Video Pipeline</h2>
-
-<input type="text" id="videoTitle" placeholder="Video Title">
-<input type="date" id="publishDate">
-<textarea id="videoScript" rows="4" placeholder="Script..."></textarea>
+<input placeholder="Video Topic" id="videoTopic">
+<input type="date" id="videoDate">
+<textarea placeholder="Script" id="videoScript"></textarea>
 <button class="action" onclick="addVideo()">Add Video</button>
-
 <div id="videoList"></div>
 </div>
 
 <!-- CALENDAR -->
 <div id="calendar" class="section">
-<h2>Content Calendar</h2>
-<div class="calendar" id="calendarGrid"></div>
+<h2>Calendar</h2>
+<div id="calendarGrid" class="calendar"></div>
+<div id="calendarVideos"></div>
 </div>
 
-<!-- FIREBASE -->
+<!-- LEARNING -->
+<div id="learning" class="section">
+<h2>All Learnings</h2>
+<div id="learningList"></div>
+</div>
+
+<!-- REVENUE -->
+<div id="revenue" class="section">
+<h2>Revenue & Expense</h2>
+
+<select id="entryType">
+<option>Revenue</option>
+<option>Expense</option>
+</select>
+
+<input placeholder="Amount" id="entryAmount" type="number">
+<input placeholder="Category" id="entryCategory">
+<input placeholder="Description" id="entryDesc">
+<input type="date" id="entryDate">
+
+<select id="splitType">
+<option value="single">Single</option>
+<option value="equal">Equal</option>
+<option value="custom">Custom</option>
+</select>
+
+<input placeholder="Naman Share" id="namanShare" type="number">
+<input placeholder="Prateek Share" id="prateekShare" type="number">
+
+<button class="action" onclick="addEntry()">Add Entry</button>
+
+<canvas id="financeChart"></canvas>
+<div id="financeBreakdown"></div>
+</div>
+
+<div class="modal" id="scriptModal">
+<div class="modal-content">
+<h3 id="modalTitle"></h3>
+<textarea id="modalScript"></textarea>
+<button onclick="closeModal()">Close</button>
+</div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -113,164 +167,128 @@ projectId:"progress-app-6e9e6"
 };
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
+
 const tasksRef=db.collection("tasks");
 const videosRef=db.collection("videos");
+const learningRef=db.collection("learnings");
+const financeRef=db.collection("finance");
 
-let currentDate=new Date().toISOString().slice(0,10);
-let viewingDate=currentDate;
-let tasks=[],videos=[];
+let tasks=[],videos=[],learnings=[],finance=[];
 
-/* NAV */
-function showSection(id){
+function show(id){
 document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
 document.getElementById(id).classList.add("active");
 }
+
 function toggleMode(){document.body.classList.toggle("light");}
 
-/* TASKS */
-function addTask(){
-if(!taskInput.value)return;
-tasksRef.add({
-text:taskInput.value,
-cat:taskCategory.value,
-pri:taskPriority.value,
-done:false,
-date:currentDate
-});
-taskInput.value="";
-}
-function toggleTask(id,current){tasksRef.doc(id).update({done:!current});}
-function deleteTask(id){tasksRef.doc(id).delete();}
+const today=new Date().toISOString().slice(0,10);
 
-tasksRef.onSnapshot(snapshot=>{
+function addTask(){
+tasksRef.add({
+text:taskText.value,
+owner:taskOwner.value,
+category:taskCategory.value,
+sub:taskSub.value,
+priority:taskPriority.value,
+done:false,
+date:today
+});
+taskText.value="";
+}
+
+tasksRef.onSnapshot(s=>{
 tasks=[];
-snapshot.forEach(doc=>tasks.push({id:doc.id,...doc.data()}));
+subFilter.innerHTML=`<option value="">All Subfolders</option>`;
+s.forEach(d=>{
+tasks.push({id:d.id,...d.data()});
+});
+let subs=[...new Set(tasks.map(t=>t.sub).filter(Boolean))];
+subs.forEach(sub=>{
+subFilter.innerHTML+=`<option>${sub}</option>`;
+});
 renderTasks();
-checkHighPriority();
-updateDashboard();
 });
 
 function renderTasks(){
 taskList.innerHTML="";
-tasks.filter(t=>t.date===viewingDate).forEach(t=>{
+let sub=subFilter.value;
+let todayTasks=tasks.filter(t=>t.date===today);
+if(sub) todayTasks=todayTasks.filter(t=>t.sub===sub);
+
+todayTasks.forEach(t=>{
 taskList.innerHTML+=`
 <div class="card">
 <input type="checkbox" ${t.done?"checked":""}
-onclick="toggleTask('${t.id}',${t.done})">
-<b>${t.text}</b> (${t.cat}-${t.pri})
-<button onclick="deleteTask('${t.id}')"
-style="float:right;background:red;color:white;border:none;">X</button>
+onclick="tasksRef.doc('${t.id}').update({done:${!t.done}})">
+<b>${t.text}</b> (${t.owner})
+<button onclick="tasksRef.doc('${t.id}').delete()">X</button>
 </div>`;
 });
+
+let done=todayTasks.filter(t=>t.done).length;
+let percent=todayTasks.length?Math.round((done/todayTasks.length)*100):0;
+dailyTaskProgress.innerHTML=`Daily Progress: ${percent}%`;
+if(todayTasks.some(t=>t.priority==="High"&&!t.done)) alert("High Priority Task Pending!");
 }
 
-function viewYesterday(){
-let d=new Date(currentDate);
-d.setDate(d.getDate()-1);
-viewingDate=d.toISOString().slice(0,10);
-renderTasks();
-}
-function viewToday(){viewingDate=currentDate;renderTasks();}
-
-function checkHighPriority(){
-let high=tasks.filter(t=>t.date===currentDate && t.pri==="High" && !t.done);
-if(high.length>0){
-alert("⚠ High Priority Task Pending!");
-}
-}
-
-/* VIDEOS */
 function addVideo(){
-if(!videoTitle.value||!publishDate.value)return;
 videosRef.add({
-title:videoTitle.value,
+topic:videoTopic.value,
 script:videoScript.value,
-publishDate:publishDate.value,
-stages:{
-scripting:true,
-shooting:false,
-editing:false,
-thumbnail:false,
-posting:false
-}
+publishDate:videoDate.value,
+stages:{scripting:true,shooting:false,editing:false,thumbnail:false,posting:false}
 });
-videoTitle.value="";videoScript.value="";
 }
 
-function toggleStage(id,stage,current){
-videosRef.doc(id).update({[`stages.${stage}`]:!current});
-}
-function updateScript(id,value){videosRef.doc(id).update({script:value});}
-function deleteVideo(id){videosRef.doc(id).delete();}
-
-videosRef.onSnapshot(snapshot=>{
+videosRef.onSnapshot(s=>{
 videos=[];
 videoList.innerHTML="";
-snapshot.forEach(doc=>{
-let v=doc.data();videos.push({id:doc.id,...v});
+s.forEach(d=>{
+let v={id:d.id,...d.data()};
+videos.push(v);
 let completed=Object.values(v.stages).filter(Boolean).length;
 let percent=Math.round((completed/5)*100);
 
 videoList.innerHTML+=`
 <div class="card">
-<h3>${v.title}</h3>
-<small>${v.publishDate}</small>
-<textarea onchange="updateScript('${doc.id}',this.value)">${v.script||""}</textarea>
+<b onclick="openModal('${v.id}')">${v.topic}</b>
+<div>${percent}%</div>
 ${Object.keys(v.stages).map(stage=>`
 <label><input type="checkbox"
 ${v.stages[stage]?"checked":""}
-onclick="toggleStage('${doc.id}','${stage}',${v.stages[stage]})">
-${stage}</label><br>`).join("")}
-<div class="progressbar"><div class="progress" style="width:${percent}%"></div></div>
-<b>${percent}%</b>
-<button onclick="deleteVideo('${doc.id}')"
-style="background:red;color:white;border:none;margin-top:8px;">Delete</button>
+onclick="toggleStage('${v.id}','${stage}',${v.stages[stage]})">
+${stage}</label>`).join("<br>")}
 </div>`;
 });
 renderCalendar();
-updateDashboard();
 });
 
-/* DASHBOARD */
-function updateDashboard(){
-let month=document.getElementById("monthFilter").value;
-if(!month){
-let now=new Date();
-month=now.toISOString().slice(0,7);
+function toggleStage(id,stage,current){
+videosRef.doc(id).update({[`stages.${stage}`]:!current});
+if(stage==="posting"&&!current){
+let v=videos.find(v=>v.id===id);
+learningRef.add({topic:v.topic,learning:"",date:new Date().toISOString()});
 }
-let monthVideos=videos.filter(v=>v.publishDate?.startsWith(month));
-let posted=monthVideos.filter(v=>v.stages.posting).length;
-let total=monthVideos.length;
-let percent=total?Math.round((posted/total)*100):0;
-
-circleStats.innerHTML=generateCircle("Posted",percent);
-videoBreakdown.innerHTML=`
-Total Videos: ${total}<br>
-Scripted: ${monthVideos.filter(v=>v.stages.scripting).length}<br>
-Shooting: ${monthVideos.filter(v=>v.stages.shooting).length}<br>
-Editing: ${monthVideos.filter(v=>v.stages.editing).length}<br>
-Thumbnail: ${monthVideos.filter(v=>v.stages.thumbnail).length}<br>
-Posted: ${posted}
-`;
 }
 
-function generateCircle(label,p){
-let r=55;
-let circ=2*Math.PI*r;
-let offset=circ-(circ*p)/100;
-return`
-<div class="circle">
-<svg width="130" height="130">
-<circle cx="65" cy="65" r="${r}" stroke="#334155" stroke-width="10" fill="none"/>
-<circle cx="65" cy="65" r="${r}" stroke="var(--accent)" stroke-width="10"
-fill="none" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
-stroke-linecap="round"/>
-</svg>
-<span>${label}<br>${p}%</span>
-</div>`;
+function openModal(id){
+let v=videos.find(v=>v.id===id);
+modalTitle.innerText=v.topic;
+modalScript.value=v.script;
+scriptModal.style.display="flex";
 }
 
-/* CALENDAR */
+function closeModal(){scriptModal.style.display="none";}
+
+learningRef.onSnapshot(s=>{
+learningList.innerHTML="";
+s.forEach(d=>{
+let l=d.data();
+learningList.innerHTML+=`<div class="card">${l.topic} - ${l.learning||"No learning yet"}</div>`;
+});
+});
+
 function renderCalendar(){
 calendarGrid.innerHTML="";
 let now=new Date();
@@ -281,22 +299,56 @@ for(let d=1;d<=days;d++){
 let full=`${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 let vids=videos.filter(v=>v.publishDate===full);
 calendarGrid.innerHTML+=`
-<div class="day">
-<b>${d}</b><br>
-${vids.map(v=>v.title).join("<br>")}
+<div class="day" onclick="showDay('${full}')">
+<b>${d}</b><br>${vids.map(v=>v.topic).join("<br>")}
 </div>`;
 }
 }
 
-/* INIT MONTH FILTER */
-let monthSelect=document.getElementById("monthFilter");
-let now=new Date();
-for(let i=0;i<6;i++){
-let d=new Date(now.getFullYear(),now.getMonth()-i,1);
-let val=d.toISOString().slice(0,7);
-monthSelect.innerHTML+=`<option value="${val}">${val}</option>`;
+function showDay(date){
+calendarVideos.innerHTML=videos.filter(v=>v.publishDate===date)
+.map(v=>`<div class="card">${v.topic}</div>`).join("");
 }
-monthSelect.value=now.toISOString().slice(0,7);
+
+function addEntry(){
+financeRef.add({
+type:entryType.value,
+amount:Number(entryAmount.value),
+category:entryCategory.value,
+desc:entryDesc.value,
+date:entryDate.value,
+splitType:splitType.value,
+naman:Number(namanShare.value)||0,
+prateek:Number(prateekShare.value)||0
+});
+}
+
+financeRef.onSnapshot(s=>{
+finance=[];
+s.forEach(d=>finance.push(d.data()));
+updateFinance();
+});
+
+function updateFinance(){
+let rev=finance.filter(f=>f.type==="Revenue")
+.reduce((a,b)=>a+b.amount,0);
+let exp=finance.filter(f=>f.type==="Expense")
+.reduce((a,b)=>a+b.amount,0);
+let net=rev-exp;
+
+financeBreakdown.innerHTML=`Revenue: ${rev}<br>Expense: ${exp}<br>Net: ${net}`;
+
+new Chart(financeChart,{
+type:'bar',
+data:{labels:['Revenue','Expense'],
+datasets:[{data:[rev,exp]}]}
+});
+}
+
+function refreshAll(){
+renderTasks();
+updateFinance();
+}
 </script>
 </body>
 </html>
