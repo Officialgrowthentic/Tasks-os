@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Naman OS 4.0</title>
+<title>Naman OS 5.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
@@ -10,7 +10,7 @@
 --bg:#0f172a;
 --card:#1e293b;
 --text:#ffffff;
---accent:#00f5d4;
+--accent:#22d3ee;
 --danger:#ef4444;
 }
 
@@ -65,15 +65,6 @@ padding:10px;
 margin-top:10px;
 border-radius:10px;
 border:none;
-background:#334155;
-color:white;
-}
-
-.light input,
-.light select,
-.light textarea{
-background:#e2e8f0;
-color:black;
 }
 
 button.action{
@@ -87,42 +78,26 @@ font-weight:600;
 color:white;
 }
 
-.grid{
+.calendar-header{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-gap:15px;
-}
-
-.circle{
-width:140px;
-height:140px;
-position:relative;
-margin:auto;
-}
-
-.circle svg{transform:rotate(-90deg);}
-
-.circle span{
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-font-weight:600;
+grid-template-columns:repeat(7,1fr);
 text-align:center;
+font-weight:600;
+margin-top:10px;
 }
 
 .calendar{
 display:grid;
 grid-template-columns:repeat(7,1fr);
 gap:6px;
-margin-top:15px;
+margin-top:6px;
 }
 
 .day{
 background:var(--card);
-padding:8px;
+padding:6px;
 border-radius:10px;
-min-height:70px;
+min-height:80px;
 font-size:12px;
 }
 
@@ -146,8 +121,17 @@ height:100%;
 background:var(--accent);
 }
 
-textarea{
-resize:vertical;
+.circle{
+width:120px;
+margin:10px;
+text-align:center;
+}
+
+.circle svg{transform:rotate(-90deg);}
+
+.flex{
+display:flex;
+flex-wrap:wrap;
 }
 
 </style>
@@ -168,13 +152,13 @@ resize:vertical;
 <div id="dashboard" class="section active">
 <h2>Dashboard</h2>
 <div id="priorityAlert"></div>
-<div class="grid" id="progressCircles"></div>
+<div class="flex" id="progressCircles"></div>
 <div class="card" id="videoStats"></div>
 </div>
 
 <!-- TASKS -->
 <div id="tasks" class="section">
-<h2>Task Manager</h2>
+<h2>Tasks</h2>
 
 <select id="taskCategory">
 <option>Fitness</option>
@@ -190,7 +174,6 @@ resize:vertical;
 </select>
 
 <input type="text" id="taskInput" placeholder="Enter task">
-
 <button class="action" onclick="addTask()">Add Task</button>
 
 <div id="taskList"></div>
@@ -199,230 +182,240 @@ resize:vertical;
 <!-- CALENDAR -->
 <div id="calendar" class="section">
 <h2>Content Calendar</h2>
-<input type="month" id="monthPicker" onchange="renderCalendar()">
+
 <input type="date" id="contentDate">
 <input type="text" id="contentText" placeholder="Video Idea">
 <button class="action" onclick="addContent()">Add</button>
+
+<div class="calendar-header">
+<div>Sun</div><div>Mon</div><div>Tue</div>
+<div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+</div>
+
 <div class="calendar" id="calendarGrid"></div>
 </div>
 
 <!-- VIDEOS -->
 <div id="videos" class="section">
-<h2>🎬 Script Studio</h2>
+<h2>Script Studio</h2>
 
-<div class="card">
 <input type="text" id="videoTitle" placeholder="Video Title">
-<textarea id="videoScript" rows="8" placeholder="Write your script here..."></textarea>
-<button class="action" onclick="addVideo()">Save Script</button>
-</div>
+<textarea id="videoScript" rows="6" placeholder="Write script..."></textarea>
+<button class="action" onclick="addVideo()">Add Video</button>
 
 <div id="videoList"></div>
 </div>
 
 <script>
 
-let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-let contents = JSON.parse(localStorage.getItem("contents")) || [];
-let videos = JSON.parse(localStorage.getItem("videos")) || [];
+let tasks=JSON.parse(localStorage.getItem("tasks"))||[];
+let contents=JSON.parse(localStorage.getItem("contents"))||[];
+let videos=JSON.parse(localStorage.getItem("videos"))||[];
 
 function save(){
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-  localStorage.setItem("contents", JSON.stringify(contents));
-  localStorage.setItem("videos", JSON.stringify(videos));
+localStorage.setItem("tasks",JSON.stringify(tasks));
+localStorage.setItem("contents",JSON.stringify(contents));
+localStorage.setItem("videos",JSON.stringify(videos));
 }
 
 function showSection(id){
-  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  updateDashboard();
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+updateDashboard();
 }
 
 function toggleMode(){
-  document.body.classList.toggle("light");
+document.body.classList.toggle("light");
 }
 
-/* ---------------- TASKS ---------------- */
+/* TASKS */
 
 function addTask(){
-  let cat=document.getElementById("taskCategory").value;
-  let pri=document.getElementById("taskPriority").value;
-  let text=document.getElementById("taskInput").value;
-  if(!text)return;
-
-  tasks.push({cat,pri,text,done:false});
-  document.getElementById("taskInput").value="";
-  save();
-  renderTasks();
-  updateDashboard();
+let cat=taskCategory.value;
+let pri=taskPriority.value;
+let text=taskInput.value;
+if(!text)return;
+tasks.push({cat,pri,text,done:false});
+taskInput.value="";
+save();
+renderTasks();
+updateDashboard();
 }
 
 function toggleTask(i){
-  tasks[i].done=!tasks[i].done;
-  save();
-  renderTasks();
-  updateDashboard();
+tasks[i].done=!tasks[i].done;
+save();
+renderTasks();
+updateDashboard();
+}
+
+function deleteTask(i){
+tasks.splice(i,1);
+save();
+renderTasks();
+updateDashboard();
 }
 
 function renderTasks(){
-  let list=document.getElementById("taskList");
-  list.innerHTML="";
-  tasks.forEach((t,i)=>{
-    list.innerHTML+=`
-    <div class="card">
-      <b>${t.cat}</b> (${t.pri})
-      <br>${t.text}
-      <br>
-      <button onclick="toggleTask(${i})">✔</button>
-    </div>`;
-  });
+taskList.innerHTML="";
+tasks.forEach((t,i)=>{
+taskList.innerHTML+=`
+<div class="card">
+<input type="checkbox" ${t.done?"checked":""}
+onclick="toggleTask(${i})">
+<b>${t.text}</b> (${t.cat} - ${t.pri})
+<button onclick="deleteTask(${i})" style="float:right;background:var(--danger);border:none;color:white;border-radius:6px;">X</button>
+</div>`;
+});
 }
 
-/* ---------------- VIDEOS ---------------- */
+/* CALENDAR */
+
+function renderCalendar(){
+calendarGrid.innerHTML="";
+let now=new Date();
+let year=now.getFullYear();
+let month=now.getMonth();
+let first=new Date(year,month,1).getDay();
+let days=new Date(year,month+1,0).getDate();
+
+for(let i=0;i<first;i++){
+calendarGrid.innerHTML+=`<div></div>`;
+}
+
+for(let d=1;d<=days;d++){
+let full=`${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+let events=contents.filter(c=>c.date===full).map(c=>c.text).join("<br>");
+calendarGrid.innerHTML+=`
+<div class="day">
+<b>${d}</b><br>${events}
+</div>`;
+}
+}
+
+function addContent(){
+let date=contentDate.value;
+let text=contentText.value;
+if(!date||!text)return;
+contents.push({date,text});
+contentText.value="";
+save();
+renderCalendar();
+}
+
+/* VIDEOS */
 
 function addVideo(){
-  let title=document.getElementById("videoTitle").value;
-  let script=document.getElementById("videoScript").value;
+let title=videoTitle.value;
+let script=videoScript.value;
+if(!title)return;
 
-  if(!title)return;
+videos.push({
+title,
+script,
+stages:{scripting:true,shooting:false,editing:false,thumbnail:false,uploaded:false}
+});
 
-  videos.push({
-    title,
-    script,
-    stages:{
-      scripting:true,
-      shooting:false,
-      editing:false,
-      thumbnail:false,
-      uploaded:false
-    }
-  });
-
-  document.getElementById("videoTitle").value="";
-  document.getElementById("videoScript").value="";
-  save();
-  renderVideos();
-  updateDashboard();
+videoTitle.value="";
+videoScript.value="";
+save();
+renderVideos();
+updateDashboard();
 }
 
-function toggleStage(index,stage){
-  videos[index].stages[stage]=!videos[index].stages[stage];
-  save();
-  renderVideos();
-  updateDashboard();
+function toggleStage(i,stage){
+videos[i].stages[stage]=!videos[i].stages[stage];
+save();
+renderVideos();
+updateDashboard();
 }
 
-function updateScript(index,value){
-  videos[index].script=value;
-  save();
+function deleteVideo(i){
+videos.splice(i,1);
+save();
+renderVideos();
+updateDashboard();
 }
 
 function renderVideos(){
-  let list=document.getElementById("videoList");
-  list.innerHTML="";
+videoList.innerHTML="";
+videos.forEach((v,i)=>{
+let completed=Object.values(v.stages).filter(Boolean).length;
+let percent=Math.round((completed/5)*100);
 
-  videos.forEach((v,i)=>{
+videoList.innerHTML+=`
+<div class="card">
+<h3>${v.title}</h3>
+<textarea rows="4" onchange="videos[${i}].script=this.value;save();">${v.script}</textarea>
 
-    let completed = Object.values(v.stages).filter(Boolean).length;
-    let percent = Math.round((completed/5)*100);
+<label><input type="checkbox" ${v.stages.scripting?"checked":""}
+onclick="toggleStage(${i},'scripting')"> Scripting</label><br>
+<label><input type="checkbox" ${v.stages.shooting?"checked":""}
+onclick="toggleStage(${i},'shooting')"> Shooting</label><br>
+<label><input type="checkbox" ${v.stages.editing?"checked":""}
+onclick="toggleStage(${i},'editing')"> Editing</label><br>
+<label><input type="checkbox" ${v.stages.thumbnail?"checked":""}
+onclick="toggleStage(${i},'thumbnail')"> Thumbnail</label><br>
+<label><input type="checkbox" ${v.stages.uploaded?"checked":""}
+onclick="toggleStage(${i},'uploaded')"> Uploaded</label>
 
-    list.innerHTML+=`
-    <div class="card">
-      <h3>${v.title}</h3>
+<div class="progressbar">
+<div class="progress" style="width:${percent}%"></div>
+</div>
+<b>${percent}% Complete</b>
 
-      <textarea rows="6"
-      onchange="updateScript(${i},this.value)"
-      placeholder="Write script here...">${v.script || ""}</textarea>
-
-      <div style="margin-top:10px;">
-        <label><input type="checkbox"
-        ${v.stages.scripting?"checked":""}
-        onclick="toggleStage(${i},'scripting')"> Scripting</label><br>
-
-        <label><input type="checkbox"
-        ${v.stages.shooting?"checked":""}
-        onclick="toggleStage(${i},'shooting')"> Shooting</label><br>
-
-        <label><input type="checkbox"
-        ${v.stages.editing?"checked":""}
-        onclick="toggleStage(${i},'editing')"> Editing</label><br>
-
-        <label><input type="checkbox"
-        ${v.stages.thumbnail?"checked":""}
-        onclick="toggleStage(${i},'thumbnail')"> Thumbnail</label><br>
-
-        <label><input type="checkbox"
-        ${v.stages.uploaded?"checked":""}
-        onclick="toggleStage(${i},'uploaded')"> Uploaded</label>
-      </div>
-
-      <div class="progressbar">
-        <div class="progress" style="width:${percent}%"></div>
-      </div>
-      <b>${percent}% Complete</b>
-
-    </div>`;
-  });
+<button onclick="deleteVideo(${i})" style="background:var(--danger);border:none;color:white;border-radius:6px;margin-top:6px;">Delete</button>
+</div>`;
+});
 }
 
-/* ---------------- DASHBOARD ---------------- */
+/* DASHBOARD */
 
 function updateDashboard(){
+let high=tasks.filter(t=>t.pri==="High"&&!t.done);
+priorityAlert.innerHTML=
+high.length?`<div class="alert">⚠ ${high.length} High Priority Tasks Pending</div>`:"";
 
-  let high=tasks.filter(t=>t.pri==="High"&&!t.done);
-  document.getElementById("priorityAlert").innerHTML=
-  high.length?`<div class="alert">⚠ ${high.length} High Priority Tasks Pending!</div>`:"";
+let total=tasks.length;
+let done=tasks.filter(t=>t.done).length;
+let overall=total?Math.round((done/total)*100):0;
 
-  let cats=["Fitness","Business","Work","General"];
-  let grid="";
-  let totalTasks=tasks.length;
-  let doneTasks=tasks.filter(t=>t.done).length;
-  let overall=totalTasks?Math.round((doneTasks/totalTasks)*100):0;
+progressCircles.innerHTML=generateCircle("Overall",overall);
 
-  grid+=circleHTML("Overall",overall);
+let scripted=videos.filter(v=>v.stages.scripting).length;
+let shooting=videos.filter(v=>v.stages.shooting).length;
+let editing=videos.filter(v=>v.stages.editing).length;
+let uploaded=videos.filter(v=>v.stages.uploaded).length;
 
-  cats.forEach(cat=>{
-    let total=tasks.filter(t=>t.cat===cat).length;
-    let done=tasks.filter(t=>t.cat===cat&&t.done).length;
-    let p=total?Math.round((done/total)*100):0;
-    grid+=circleHTML(cat,p);
-  });
-
-  document.getElementById("progressCircles").innerHTML=grid;
-
-  let scripted=videos.filter(v=>v.stages.scripting).length;
-  let shooting=videos.filter(v=>v.stages.shooting).length;
-  let editing=videos.filter(v=>v.stages.editing).length;
-  let uploaded=videos.filter(v=>v.stages.uploaded).length;
-
-  document.getElementById("videoStats").innerHTML=`
-  📝 Scripted: ${scripted}<br>
-  🎥 Shooting: ${shooting}<br>
-  ✂ Editing: ${editing}<br>
-  🖼 Thumbnail: ${videos.filter(v=>v.stages.thumbnail).length}<br>
-  🚀 Uploaded: ${uploaded}
-  `;
+videoStats.innerHTML=`
+📝 Scripted: ${scripted}<br>
+🎥 Shooting: ${shooting}<br>
+✂ Editing: ${editing}<br>
+🚀 Uploaded: ${uploaded}
+`;
 }
 
-function circleHTML(label,p){
-  let r=55;
-  let circ=2*Math.PI*r;
-  let offset=circ-(circ*p)/100;
-  return `
-  <div class="circle">
-    <svg width="140" height="140">
-      <circle cx="70" cy="70" r="${r}" stroke="#334155" stroke-width="10" fill="none"/>
-      <circle cx="70" cy="70" r="${r}" stroke="var(--accent)" stroke-width="10"
-      fill="none" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
-      stroke-linecap="round"/>
-    </svg>
-    <span>${label}<br>${p}%</span>
-  </div>`;
+function generateCircle(label,p){
+let r=50;
+let circ=2*Math.PI*r;
+let offset=circ-(circ*p)/100;
+return `
+<div class="circle">
+<svg width="120" height="120">
+<circle cx="60" cy="60" r="${r}" stroke="#334155" stroke-width="10" fill="none"/>
+<circle cx="60" cy="60" r="${r}" stroke="var(--accent)" stroke-width="10"
+fill="none" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
+stroke-linecap="round"/>
+</svg>
+${label}<br>${p}%
+</div>`;
 }
 
-/* ---------------- INIT ---------------- */
+/* INIT */
 
 renderTasks();
 renderVideos();
+renderCalendar();
 updateDashboard();
 
 </script>
