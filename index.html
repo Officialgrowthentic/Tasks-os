@@ -2,55 +2,99 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Naman OS 11</title>
+<title>Naman OS 12</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body{margin:0;font-family:Inter;background:#0f172a;color:#fff}
+
+body{margin:0;font-family:Inter;background:#0f172a;color:white}
+
 .nav{display:flex;flex-wrap:wrap;gap:10px;background:#1e293b;padding:12px}
-.nav button{background:none;border:none;color:#fff;font-weight:600;cursor:pointer}
+.nav button{background:none;border:none;color:white;font-weight:600;cursor:pointer}
 
 .section{display:none;padding:20px}
 .active{display:block}
 
-.card{background:#1e293b;padding:15px;border-radius:12px;margin-top:12px}
+.card{background:#1e293b;padding:14px;border-radius:12px;margin-top:10px}
 
-input,select,textarea{width:100%;margin-top:6px;padding:8px;border-radius:8px;border:none}
+input,select,textarea{
+width:100%;
+padding:8px;
+margin-top:6px;
+border-radius:8px;
+border:none
+}
 
-button.action{background:#22d3ee;border:none;padding:8px;border-radius:8px;margin-top:8px;color:#000;font-weight:600}
+button.action{
+background:#22d3ee;
+border:none;
+padding:8px;
+border-radius:8px;
+margin-top:8px;
+cursor:pointer;
+font-weight:600
+}
 
-.progressbar{height:8px;background:#334155;border-radius:8px;margin-top:6px;overflow:hidden}
-.progress{height:100%;background:#22d3ee}
+.progressbar{
+height:8px;
+background:#334155;
+border-radius:6px;
+margin-top:6px;
+overflow:hidden
+}
 
-.flex{display:flex;gap:20px;flex-wrap:wrap}
+.progress{
+height:100%;
+background:#22d3ee
+}
 
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
-.day{background:#1e293b;padding:8px;border-radius:8px;font-size:11px;cursor:pointer}
+.flex{
+display:flex;
+gap:20px;
+flex-wrap:wrap
+}
+
+.calendar{
+display:grid;
+grid-template-columns:repeat(7,1fr);
+gap:6px;
+margin-top:12px
+}
+
+.day{
+background:#1e293b;
+padding:8px;
+border-radius:8px;
+font-size:11px;
+cursor:pointer
+}
 
 .modal{
 position:fixed;
-top:0;left:0;right:0;bottom:0;
+inset:0;
 background:rgba(0,0,0,.7);
 display:none;
 align-items:center;
 justify-content:center
 }
 
-.modalContent{
+.modalBox{
 background:#1e293b;
 padding:20px;
 width:90%;
-max-width:800px;
+max-width:900px;
 border-radius:10px
 }
+
 </style>
 </head>
 
 <body>
 
 <div class="nav">
+
 <button onclick="show('dashboard')">Dashboard</button>
 <button onclick="show('tasks')">Tasks</button>
 <button onclick="show('videos')">Videos</button>
@@ -58,31 +102,42 @@ border-radius:10px
 <button onclick="show('learning')">Learning</button>
 <button onclick="show('finance')">Finance</button>
 <button onclick="show('goals')">Goals</button>
+
 </div>
 
+
 <!-- DASHBOARD -->
+
 <div id="dashboard" class="section active">
-<h2>Dashboard</h2>
+
+<h2>Analytics</h2>
 
 <select id="dashFilter" onchange="updateDashboard()">
-<option value="all">All Time</option>
-<option value="month">This Month</option>
-<option value="week">This Week</option>
+<option value="all">All</option>
+<option value="month">Month</option>
+<option value="week">Week</option>
 <option value="today">Today</option>
 </select>
 
 <div class="flex">
-<canvas id="taskChart" width="200" height="200"></canvas>
-<canvas id="videoChart" width="200" height="200"></canvas>
-<canvas id="financeChart" width="200" height="200"></canvas>
-<canvas id="goalChart" width="200" height="200"></canvas>
+
+<canvas id="taskChart" width="180" height="180"></canvas>
+<canvas id="videoChart" width="180" height="180"></canvas>
+<canvas id="financeChart" width="180" height="180"></canvas>
+<canvas id="earnChart" width="180" height="180"></canvas>
+<canvas id="goalChart" width="180" height="180"></canvas>
+
 </div>
 
 <div id="dashStats" class="card"></div>
+
 </div>
 
+
 <!-- TASKS -->
+
 <div id="tasks" class="section">
+
 <h2>Tasks</h2>
 
 <input type="date" id="taskDateFilter">
@@ -93,6 +148,7 @@ border-radius:10px
 </select>
 
 <input id="taskSub" placeholder="Subfolder">
+
 <input id="taskText" placeholder="Task">
 
 <select id="taskPriority">
@@ -103,62 +159,101 @@ border-radius:10px
 
 <button class="action" onclick="addTask()">Add Task</button>
 
-<select id="subFilter" onchange="renderTasks()">
-<option value="">All Subfolders</option>
-</select>
+<select id="subFilter" onchange="renderTasks()"></select>
 
-<label><input type="checkbox" id="pendingOnly" onchange="renderTasks()"> Pending only</label>
+<label>
+<input type="checkbox" id="pendingOnly" onchange="renderTasks()">
+Pending only
+</label>
 
 <div id="taskProgress"></div>
+
 <div id="taskList"></div>
+
 </div>
 
+
 <!-- VIDEOS -->
+
 <div id="videos" class="section">
+
 <h2>Videos</h2>
 
 <input id="videoTopic" placeholder="Topic">
+
 <input type="date" id="videoDate">
+
 <textarea id="videoScript" placeholder="Script"></textarea>
 
 <button class="action" onclick="addVideo()">Add Video</button>
 
 <select id="videoStageFilter" onchange="renderVideos()">
+
 <option value="">All</option>
 <option value="scripting">Scripting</option>
 <option value="shooting">Shooting</option>
 <option value="editing">Editing</option>
 <option value="thumbnail">Thumbnail</option>
 <option value="posting">Posting</option>
+
 </select>
 
 <div id="videoList"></div>
+
 </div>
+
 
 <!-- SCRIPT MODAL -->
+
 <div id="scriptModal" class="modal">
-<div class="modalContent">
+
+<div class="modalBox">
+
 <h3 id="modalTitle"></h3>
+
 <textarea id="modalScript" style="height:300px"></textarea>
+
 <button onclick="saveScript()">Save</button>
+
 <button onclick="closeModal()">Close</button>
+
 </div>
+
 </div>
+
 
 <!-- CALENDAR -->
+
 <div id="calendar" class="section">
+
 <h2>Calendar</h2>
+
 <div id="calendarGrid" class="calendar"></div>
+
 </div>
+
 
 <!-- LEARNING -->
+
 <div id="learning" class="section">
+
 <h2>Learning</h2>
+
+<input id="learningTopic" placeholder="Topic">
+
+<textarea id="learningNotes"></textarea>
+
+<button onclick="addLearning()">Add Learning</button>
+
 <div id="learningList"></div>
+
 </div>
 
+
 <!-- FINANCE -->
+
 <div id="finance" class="section">
+
 <h2>Finance</h2>
 
 <select id="entryType">
@@ -166,9 +261,11 @@ border-radius:10px
 <option>Expense</option>
 </select>
 
-<input id="entryAmount" type="number" placeholder="Amount">
+<input type="number" id="entryAmount" placeholder="Amount">
+
 <input id="entryDesc" placeholder="Description">
-<input id="entryDate" type="date">
+
+<input type="date" id="entryDate">
 
 <select id="entryOwner">
 <option>Naman</option>
@@ -178,29 +275,32 @@ border-radius:10px
 
 <button class="action" onclick="addEntry()">Add Entry</button>
 
-<select id="financeFilter" onchange="renderFinance()">
-<option value="all">All</option>
-<option value="month">Month</option>
-<option value="week">Week</option>
-<option value="year">Year</option>
-</select>
-
 <div id="financeTotals" class="card"></div>
+
 <div id="transactionList"></div>
+
 </div>
+
 
 <!-- GOALS -->
+
 <div id="goals" class="section">
+
 <h2>Monthly Goals</h2>
 
-<input id="goalText" placeholder="Goal">
-<button class="action" onclick="addGoal()">Add Goal</button>
+<input id="goalText">
+
+<button onclick="addGoal()">Add Goal</button>
 
 <div id="goalList"></div>
+
 </div>
+
+
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 
 <script>
 
@@ -216,34 +316,50 @@ const db=firebase.firestore()
 
 const tasksRef=db.collection("tasks")
 const videosRef=db.collection("videos")
-const learningRef=db.collection("learnings")
+const learningRef=db.collection("learning")
 const financeRef=db.collection("finance")
 const goalsRef=db.collection("goals")
 
 let tasks=[],videos=[],finance=[],goals=[]
 
+
 function show(id){
+
 document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
+
 document.getElementById(id).classList.add("active")
+
 }
 
+
+/* TASKS */
+
 function addTask(){
+
 tasksRef.add({
 text:taskText.value,
 owner:taskOwner.value,
 sub:taskSub.value,
 priority:taskPriority.value,
 done:false,
-date:taskDateFilter.value||new Date().toISOString().slice(0,10)
+date:taskDateFilter.value || new Date().toISOString().slice(0,10)
 })
+
 }
 
+
 tasksRef.onSnapshot(s=>{
+
 tasks=[]
+
 s.forEach(d=>tasks.push({id:d.id,...d.data()}))
+
 renderTasks()
+
 updateDashboard()
+
 })
+
 
 function renderTasks(){
 
@@ -256,57 +372,108 @@ let pending=pendingOnly.checked
 let filtered=tasks
 
 if(date) filtered=filtered.filter(t=>t.date===date)
+
 if(sub) filtered=filtered.filter(t=>t.sub===sub)
+
 if(pending) filtered=filtered.filter(t=>!t.done)
 
 filtered.forEach(t=>{
+
 taskList.innerHTML+=`
 <div class="card">
+
 <input type="checkbox" ${t.done?"checked":""}
 onclick="tasksRef.doc('${t.id}').update({done:${!t.done}})">
+
 <b>${t.text}</b> (${t.owner})
+
 <button onclick="tasksRef.doc('${t.id}').delete()">Delete</button>
-</div>`
+
+</div>
+`
+
 })
 
-let total=filtered.length
-let done=filtered.filter(t=>t.done).length
+updateSubFolders()
 
-let naman=filtered.filter(t=>t.owner==="Naman")
-let prateek=filtered.filter(t=>t.owner==="Prateek")
+updateTaskProgress(filtered)
 
-function percent(arr){
+}
+
+
+function updateSubFolders(){
+
+let subs=[...new Set(tasks.map(t=>t.sub).filter(Boolean))]
+
+subFilter.innerHTML=`<option value="">All Subfolders</option>`
+
+subs.forEach(s=>{
+
+subFilter.innerHTML+=`<option value="${s}">${s}</option>`
+
+})
+
+}
+
+
+function updateTaskProgress(list){
+
+let total=list.length
+let done=list.filter(t=>t.done).length
+
+let naman=list.filter(t=>t.owner==="Naman")
+let prateek=list.filter(t=>t.owner==="Prateek")
+
+function p(arr){
 return arr.length?Math.round(arr.filter(a=>a.done).length/arr.length*100):0
 }
 
 taskProgress.innerHTML=`
-Overall ${percent(filtered)}%
-<div class="progressbar"><div class="progress" style="width:${percent(filtered)}%"></div></div>
 
-Naman ${percent(naman)}%
-<div class="progressbar"><div class="progress" style="width:${percent(naman)}%"></div></div>
+Overall ${p(list)}%
 
-Prateek ${percent(prateek)}%
-<div class="progressbar"><div class="progress" style="width:${percent(prateek)}%"></div></div>
+<div class="progressbar"><div class="progress" style="width:${p(list)}%"></div></div>
+
+Naman ${p(naman)}%
+
+<div class="progressbar"><div class="progress" style="width:${p(naman)}%"></div></div>
+
+Prateek ${p(prateek)}%
+
+<div class="progressbar"><div class="progress" style="width:${p(prateek)}%"></div></div>
+
 `
+
 }
 
+
+/* VIDEOS */
+
 function addVideo(){
+
 videosRef.add({
 topic:videoTopic.value,
 script:videoScript.value,
 publishDate:videoDate.value,
 stages:{scripting:true,shooting:false,editing:false,thumbnail:false,posting:false}
 })
+
 }
 
 videosRef.onSnapshot(s=>{
+
 videos=[]
+
 s.forEach(d=>videos.push({id:d.id,...d.data()}))
+
 renderVideos()
+
 renderCalendar()
+
 updateDashboard()
+
 })
+
 
 function renderVideos(){
 
@@ -318,69 +485,91 @@ videos.forEach(v=>{
 
 if(filter && !v.stages[filter]) return
 
-let complete=Object.values(v.stages).filter(Boolean).length
-let percent=Math.round(complete/5*100)
+let percent=Math.round(Object.values(v.stages).filter(Boolean).length/5*100)
 
 videoList.innerHTML+=`
+
 <div class="card">
+
 <b onclick="openScript('${v.id}')">${v.topic}</b>
 
 <div class="progressbar">
+
 <div class="progress" style="width:${percent}%"></div>
+
 </div>
 
 ${Object.keys(v.stages).map(stage=>`
+
 <label>
+
 <input type="checkbox"
+
 ${v.stages[stage]?"checked":""}
+
 onclick="videosRef.doc('${v.id}').update({'stages.${stage}':${!v.stages[stage]}})">
+
 ${stage}
+
 </label>
+
 `).join("<br>")}
 
 <button onclick="videosRef.doc('${v.id}').delete()">Delete</button>
 
-</div>`
+</div>
+
+`
+
 })
+
 }
+
 
 let currentVideoId
 
+
 function openScript(id){
+
 let v=videos.find(x=>x.id===id)
+
 currentVideoId=id
+
 modalTitle.innerText=v.topic
+
 modalScript.value=v.script
+
 scriptModal.style.display="flex"
+
 }
+
 
 function closeModal(){
+
 scriptModal.style.display="none"
+
 }
+
 
 function saveScript(){
+
 videosRef.doc(currentVideoId).update({script:modalScript.value})
+
 closeModal()
+
 }
 
-learningRef.onSnapshot(s=>{
-learningList.innerHTML=""
-s.forEach(d=>{
-let l=d.data()
-learningList.innerHTML+=`
-<div class="card">
-<b>${l.topic}</b>
-<textarea onchange="learningRef.doc('${d.id}').update({notes:this.value})">${l.notes||""}</textarea>
-<button onclick="learningRef.doc('${d.id}').delete()">Delete</button>
-</div>`
-})
-})
+
+/* CALENDAR */
 
 function renderCalendar(){
+
 calendarGrid.innerHTML=""
 
 let now=new Date()
+
 let year=now.getFullYear()
+
 let month=now.getMonth()
 
 let days=new Date(year,month+1,0).getDate()
@@ -392,85 +581,212 @@ let full=`${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")
 let vids=videos.filter(v=>v.publishDate===full)
 
 calendarGrid.innerHTML+=`
+
 <div class="day" onclick="openDay('${full}')">
+
 <b>${d}</b><br>${vids.map(v=>v.topic).join("<br>")}
-</div>`
+
+</div>
+
+`
+
 }
+
 }
+
 
 function openDay(date){
+
 show("videos")
+
 videoList.innerHTML=""
-videos.filter(v=>v.publishDate===date).forEach(v=>{
+
+videos.filter(v=>v.publishDate===date)
+
+.forEach(v=>{
+
 videoList.innerHTML+=`<div class="card">${v.topic}</div>`
+
 })
+
 }
 
-function addEntry(){
-financeRef.add({
-type:entryType.value,
-amount:Number(entryAmount.value),
-desc:entryDesc.value,
-owner:entryOwner.value,
-date:entryDate.value
+
+/* LEARNING */
+
+function addLearning(){
+
+learningRef.doc(learningTopic.value).set({
+
+topic:learningTopic.value,
+
+notes:learningNotes.value
+
 })
+
+}
+
+learningRef.onSnapshot(s=>{
+
+learningList.innerHTML=""
+
+s.forEach(d=>{
+
+let l=d.data()
+
+learningList.innerHTML+=`
+
+<div class="card">
+
+<b>${l.topic}</b>
+
+<textarea onchange="learningRef.doc('${d.id}').update({notes:this.value})">
+
+${l.notes||""}
+
+</textarea>
+
+<button onclick="learningRef.doc('${d.id}').delete()">Delete</button>
+
+</div>
+
+`
+
+})
+
+})
+
+
+/* FINANCE */
+
+function addEntry(){
+
+let amount=Number(entryAmount.value)
+
+if(entryOwner.value==="Split"){
+
+financeRef.add({type:entryType.value,amount:amount/2,desc:entryDesc.value,owner:"Naman",date:entryDate.value})
+
+financeRef.add({type:entryType.value,amount:amount/2,desc:entryDesc.value,owner:"Prateek",date:entryDate.value})
+
+}
+
+else{
+
+financeRef.add({type:entryType.value,amount:amount,desc:entryDesc.value,owner:entryOwner.value,date:entryDate.value})
+
+}
+
 }
 
 financeRef.onSnapshot(s=>{
-finance=[]
-s.forEach(d=>finance.push({id:d.id,...d.data()}))
-renderFinance()
-updateDashboard()
-})
 
-function renderFinance(){
+finance=[]
 
 transactionList.innerHTML=""
 
+s.forEach(d=>{
+
+finance.push({id:d.id,...d.data()})
+
+let f=d.data()
+
+transactionList.innerHTML+=`
+
+<div class="card">
+
+${f.desc} ₹${f.amount} (${f.owner})
+
+<button onclick="financeRef.doc('${d.id}').delete()">Delete</button>
+
+</div>
+
+`
+
+})
+
+renderFinanceTotals()
+
+updateDashboard()
+
+})
+
+
+function renderFinanceTotals(){
+
 let revenue=finance.filter(f=>f.type==="Revenue").reduce((a,b)=>a+b.amount,0)
+
 let expense=finance.filter(f=>f.type==="Expense").reduce((a,b)=>a+b.amount,0)
 
 let naman=finance.filter(f=>f.owner==="Naman").reduce((a,b)=>a+b.amount,0)
+
 let prateek=finance.filter(f=>f.owner==="Prateek").reduce((a,b)=>a+b.amount,0)
 
 financeTotals.innerHTML=`
+
 Revenue ₹${revenue}<br>
+
 Expense ₹${expense}<br>
+
 Net ₹${revenue-expense}<br>
+
 Naman ₹${naman}<br>
+
 Prateek ₹${prateek}
+
 `
 
-finance.forEach(f=>{
-transactionList.innerHTML+=`
-<div class="card">
-${f.desc} ₹${f.amount} (${f.owner})
-<button onclick="financeRef.doc('${f.id}').delete()">Delete</button>
-</div>`
-})
 }
 
+
+/* GOALS */
+
 function addGoal(){
+
 goalsRef.add({
+
 text:goalText.value,
+
 done:false
+
 })
+
 }
 
 goalsRef.onSnapshot(s=>{
+
 goals=[]
+
 goalList.innerHTML=""
+
 s.forEach(d=>{
+
 goals.push({id:d.id,...d.data()})
+
 goalList.innerHTML+=`
+
 <div class="card">
-<input type="checkbox" ${d.data().done?"checked":""}
+
+<input type="checkbox"
+
+${d.data().done?"checked":""}
+
 onclick="goalsRef.doc('${d.id}').update({done:${!d.data().done}})">
+
 ${d.data().text}
-</div>`
+
+</div>
+
+`
+
 })
+
 updateDashboard()
+
 })
+
+
+/* DASHBOARD */
 
 function updateDashboard(){
 
@@ -483,17 +799,34 @@ let videoTotal=videos.length
 let revenue=finance.filter(f=>f.type==="Revenue").reduce((a,b)=>a+b.amount,0)
 let expense=finance.filter(f=>f.type==="Expense").reduce((a,b)=>a+b.amount,0)
 
+let namanEarn=finance.filter(f=>f.owner==="Naman").reduce((a,b)=>a+b.amount,0)
+let prateekEarn=finance.filter(f=>f.owner==="Prateek").reduce((a,b)=>a+b.amount,0)
+
 let goalsDone=goals.filter(g=>g.done).length
 
 dashStats.innerHTML=`
+
 Tasks ${taskDone}/${taskTotal}<br>
-Videos Posted ${videoPosted}/${videoTotal}<br>
+
+Videos ${videoPosted}/${videoTotal}<br>
+
 Revenue ₹${revenue}<br>
+
 Expense ₹${expense}<br>
+
+Net ₹${revenue-expense}<br>
+
+Naman ₹${namanEarn}<br>
+
+Prateek ₹${prateekEarn}<br>
+
 Goals ${goalsDone}/${goals.length}
+
 `
+
 }
 
 </script>
+
 </body>
 </html>
