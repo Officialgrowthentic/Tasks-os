@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Naman OS 14</title>
+<title>Naman OS 15</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -58,18 +58,6 @@ border-radius:8px;
 cursor:pointer
 }
 
-.progressbar{
-height:8px;
-background:#334155;
-border-radius:8px;
-margin-top:6px
-}
-
-.progress{
-height:8px;
-background:#22d3ee
-}
-
 .flex{
 display:flex;
 gap:20px;
@@ -118,25 +106,14 @@ max-width:800px
 <button onclick="show('calendar')">Calendar</button>
 <button onclick="show('learning')">Learning</button>
 <button onclick="show('finance')">Finance</button>
-<button onclick="show('goals')">Goals</button>
 
 </div>
-
 
 <!-- DASHBOARD -->
 
 <div id="dashboard" class="section active">
 
-<h2>Control Center</h2>
-
-<div class="flex">
-
-<canvas id="taskChart"></canvas>
-<canvas id="ownerChart"></canvas>
-<canvas id="videoChart"></canvas>
-<canvas id="financeChart"></canvas>
-
-</div>
+<h2>Dashboard</h2>
 
 <div id="dashStats" class="card"></div>
 
@@ -158,8 +135,6 @@ max-width:800px
 <input id="taskText" placeholder="Task">
 
 <button class="action" onclick="addTask()">Add Task</button>
-
-<select id="subFilter" onchange="renderTasks()"></select>
 
 <div id="taskList"></div>
 
@@ -280,12 +255,10 @@ const financeRef=db.collection("finance")
 
 let tasks=[],videos=[],finance=[]
 
-
 function show(id){
 document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
 document.getElementById(id).classList.add("active")
 }
-
 
 /* TASKS */
 
@@ -303,30 +276,26 @@ done:false
 tasksRef.onSnapshot(s=>{
 
 tasks=[]
-s.forEach(d=>tasks.push({id:d.id,...d.data()}))
-
-renderTasks()
-updateDashboard()
-
-})
-
-function renderTasks(){
-
 taskList.innerHTML=""
 
-tasks.forEach(t=>{
+s.forEach(d=>{
+
+let t=d.data()
+tasks.push(t)
 
 taskList.innerHTML+=`
 
 <div class="card">
 
 <input type="checkbox"
+
 ${t.done?"checked":""}
-onclick="tasksRef.doc('${t.id}').update({done:${!t.done}})">
 
-<b>${t.text}</b> (${t.owner})
+onclick="tasksRef.doc('${d.id}').update({done:${!t.done}})">
 
-<button onclick="tasksRef.doc('${t.id}').delete()">Delete</button>
+<b>${t.text}</b> (${t.owner || "Naman"})
+
+<button onclick="tasksRef.doc('${d.id}').delete()">Delete</button>
 
 </div>
 
@@ -334,8 +303,9 @@ onclick="tasksRef.doc('${t.id}').update({done:${!t.done}})">
 
 })
 
-}
+updateDashboard()
 
+})
 
 /* VIDEOS */
 
@@ -353,43 +323,20 @@ stages:{script:true,shoot:false,edit:false,thumb:false,post:false}
 videosRef.onSnapshot(s=>{
 
 videos=[]
-s.forEach(d=>videos.push({id:d.id,...d.data()}))
-
-renderVideos()
-renderCalendar()
-updateDashboard()
-
-})
-
-function renderVideos(){
-
 videoList.innerHTML=""
 
-videos.forEach(v=>{
+s.forEach(d=>{
+
+let v=d.data()
+videos.push({id:d.id,...v})
 
 videoList.innerHTML+=`
 
 <div class="card">
 
-<b onclick="openScript('${v.id}')">${v.topic}</b>
+<b onclick="openScript('${d.id}')">${v.topic}</b>
 
-${Object.keys(v.stages).map(stage=>`
-
-<label>
-
-<input type="checkbox"
-
-${v.stages[stage]?"checked":""}
-
-onclick="videosRef.doc('${v.id}').update({'stages.${stage}':${!v.stages[stage]}})">
-
-${stage}
-
-</label>
-
-`).join("<br>")}
-
-<button onclick="videosRef.doc('${v.id}').delete()">Delete</button>
+<button onclick="videosRef.doc('${d.id}').delete()">Delete</button>
 
 </div>
 
@@ -397,8 +344,10 @@ ${stage}
 
 })
 
-}
+renderCalendar()
+updateDashboard()
 
+})
 
 let currentVideo
 
@@ -424,7 +373,6 @@ videosRef.doc(currentVideo).update({script:modalScript.value})
 closeModal()
 }
 
-
 /* CALENDAR */
 
 function renderCalendar(){
@@ -432,7 +380,6 @@ function renderCalendar(){
 calendarGrid.innerHTML=""
 
 let today=new Date()
-
 let year=today.getFullYear()
 let month=today.getMonth()
 
@@ -446,7 +393,7 @@ let vids=videos.filter(v=>v.publishDate===date)
 
 calendarGrid.innerHTML+=`
 
-<div class="day" onclick="openDay('${date}')">
+<div class="day">
 
 <b>${i}</b><br>
 
@@ -459,23 +406,6 @@ ${vids.map(v=>v.topic).join("<br>")}
 }
 
 }
-
-function openDay(date){
-
-show("videos")
-
-videoList.innerHTML=""
-
-videos.filter(v=>v.publishDate===date)
-
-.forEach(v=>{
-
-videoList.innerHTML+=`<div class="card">${v.topic}</div>`
-
-})
-
-}
-
 
 /* LEARNING */
 
@@ -514,7 +444,6 @@ learningList.innerHTML+=`
 
 })
 
-
 /* FINANCE */
 
 function addEntry(){
@@ -523,15 +452,15 @@ let amount=Number(entryAmount.value)
 
 if(entryOwner.value==="Split"){
 
-financeRef.add({type:entryType.value,amount:amount/2,owner:"Naman",desc:entryDesc.value})
+financeRef.add({type:entryType.value,amount:amount/2,owner:"Naman",desc:entryDesc.value,date:entryDate.value})
 
-financeRef.add({type:entryType.value,amount:amount/2,owner:"Prateek",desc:entryDesc.value})
+financeRef.add({type:entryType.value,amount:amount/2,owner:"Prateek",desc:entryDesc.value,date:entryDate.value})
 
 }
 
 else{
 
-financeRef.add({type:entryType.value,amount:amount,owner:entryOwner.value,desc:entryDesc.value})
+financeRef.add({type:entryType.value,amount:amount,owner:entryOwner.value,desc:entryDesc.value,date:entryDate.value})
 
 }
 
@@ -540,13 +469,11 @@ financeRef.add({type:entryType.value,amount:amount,owner:entryOwner.value,desc:e
 financeRef.onSnapshot(s=>{
 
 finance=[]
-
 transactionList.innerHTML=""
 
 s.forEach(d=>{
 
 let f=d.data()
-
 finance.push(f)
 
 transactionList.innerHTML+=`
@@ -564,11 +491,9 @@ ${f.desc} ₹${f.amount} (${f.owner})
 })
 
 updateFinanceTotals()
-
 updateDashboard()
 
 })
-
 
 function updateFinanceTotals(){
 
@@ -590,16 +515,13 @@ Prateek ₹${prateek}
 
 }
 
-
 /* DASHBOARD */
 
 function updateDashboard(){
 
 let done=tasks.filter(t=>t.done).length
 
-dashStats.innerHTML=`
-Tasks ${done}/${tasks.length}
-`
+dashStats.innerHTML=`Tasks ${done}/${tasks.length}`
 
 }
 
