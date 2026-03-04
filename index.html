@@ -2,65 +2,90 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Naman OS 13</title>
+<title>Naman OS 14</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
-body{margin:0;font-family:Inter;background:#0f172a;color:white}
+body{
+margin:0;
+font-family:Inter;
+background:#0f172a;
+color:white
+}
 
-.nav{display:flex;flex-wrap:wrap;gap:10px;background:#1e293b;padding:12px}
-.nav button{background:none;border:none;color:white;font-weight:600;cursor:pointer}
+.nav{
+display:flex;
+gap:12px;
+background:#1e293b;
+padding:12px
+}
+
+.nav button{
+background:none;
+border:none;
+color:white;
+cursor:pointer;
+font-weight:600
+}
 
 .section{display:none;padding:20px}
 .active{display:block}
 
-.card{background:#1e293b;padding:14px;border-radius:12px;margin-top:10px}
+.card{
+background:#1e293b;
+padding:14px;
+border-radius:12px;
+margin-top:10px
+}
 
 input,select,textarea{
 width:100%;
-padding:8px;
 margin-top:6px;
+padding:8px;
 border-radius:8px;
 border:none
 }
 
 button.action{
+margin-top:8px;
 background:#22d3ee;
 border:none;
 padding:8px;
 border-radius:8px;
-margin-top:8px;
-cursor:pointer;
-font-weight:600
+cursor:pointer
 }
 
 .progressbar{
 height:8px;
 background:#334155;
-border-radius:6px;
-margin-top:6px;
-overflow:hidden
+border-radius:8px;
+margin-top:6px
 }
 
-.progress{height:100%;background:#22d3ee}
+.progress{
+height:8px;
+background:#22d3ee
+}
 
-.flex{display:flex;gap:20px;flex-wrap:wrap}
+.flex{
+display:flex;
+gap:20px;
+flex-wrap:wrap
+}
 
 .calendar{
 display:grid;
 grid-template-columns:repeat(7,1fr);
-gap:6px;
-margin-top:12px
+gap:6px
 }
 
 .day{
 background:#1e293b;
 padding:8px;
 border-radius:8px;
-font-size:11px;
 cursor:pointer
 }
 
@@ -77,8 +102,7 @@ justify-content:center
 background:#1e293b;
 padding:20px;
 width:90%;
-max-width:900px;
-border-radius:10px
+max-width:800px
 }
 
 </style>
@@ -87,6 +111,7 @@ border-radius:10px
 <body>
 
 <div class="nav">
+
 <button onclick="show('dashboard')">Dashboard</button>
 <button onclick="show('tasks')">Tasks</button>
 <button onclick="show('videos')">Videos</button>
@@ -94,21 +119,22 @@ border-radius:10px
 <button onclick="show('learning')">Learning</button>
 <button onclick="show('finance')">Finance</button>
 <button onclick="show('goals')">Goals</button>
+
 </div>
+
 
 <!-- DASHBOARD -->
 
 <div id="dashboard" class="section active">
 
-<h2>Analytics</h2>
+<h2>Control Center</h2>
 
 <div class="flex">
 
 <canvas id="taskChart"></canvas>
+<canvas id="ownerChart"></canvas>
 <canvas id="videoChart"></canvas>
 <canvas id="financeChart"></canvas>
-<canvas id="earnChart"></canvas>
-<canvas id="goalChart"></canvas>
 
 </div>
 
@@ -116,13 +142,12 @@ border-radius:10px
 
 </div>
 
+
 <!-- TASKS -->
 
 <div id="tasks" class="section">
 
 <h2>Tasks</h2>
-
-<input type="date" id="taskDateFilter">
 
 <select id="taskOwner">
 <option>Naman</option>
@@ -132,25 +157,14 @@ border-radius:10px
 <input id="taskSub" placeholder="Subfolder">
 <input id="taskText" placeholder="Task">
 
-<select id="taskPriority">
-<option>Low</option>
-<option>Medium</option>
-<option>High</option>
-</select>
-
 <button class="action" onclick="addTask()">Add Task</button>
 
 <select id="subFilter" onchange="renderTasks()"></select>
 
-<label>
-<input type="checkbox" id="pendingOnly" onchange="renderTasks()"> Pending only
-</label>
-
-<div id="taskProgress"></div>
-
 <div id="taskList"></div>
 
 </div>
+
 
 <!-- VIDEOS -->
 
@@ -168,12 +182,31 @@ border-radius:10px
 
 </div>
 
+
+<div id="scriptModal" class="modal">
+<div class="modalBox">
+
+<h3 id="modalTitle"></h3>
+
+<textarea id="modalScript" style="height:250px"></textarea>
+
+<button onclick="saveScript()">Save</button>
+<button onclick="closeModal()">Close</button>
+
+</div>
+</div>
+
+
 <!-- CALENDAR -->
 
 <div id="calendar" class="section">
+
 <h2>Calendar</h2>
+
 <div id="calendarGrid" class="calendar"></div>
+
 </div>
+
 
 <!-- LEARNING -->
 
@@ -181,7 +214,7 @@ border-radius:10px
 
 <h2>Learning</h2>
 
-<input id="learningTopic" placeholder="Topic">
+<input id="learningTopic">
 <textarea id="learningNotes"></textarea>
 
 <button onclick="addLearning()">Add Learning</button>
@@ -189,6 +222,7 @@ border-radius:10px
 <div id="learningList"></div>
 
 </div>
+
 
 <!-- FINANCE -->
 
@@ -201,8 +235,8 @@ border-radius:10px
 <option>Expense</option>
 </select>
 
-<input type="number" id="entryAmount" placeholder="Amount">
-<input id="entryDesc" placeholder="Description">
+<input type="number" id="entryAmount">
+<input id="entryDesc">
 <input type="date" id="entryDate">
 
 <select id="entryOwner">
@@ -211,24 +245,11 @@ border-radius:10px
 <option>Split</option>
 </select>
 
-<button class="action" onclick="addEntry()">Add Entry</button>
+<button onclick="addEntry()">Add Entry</button>
 
-<div id="financeTotals" class="card"></div>
+<div id="financeTotals"></div>
 
 <div id="transactionList"></div>
-
-</div>
-
-<!-- GOALS -->
-
-<div id="goals" class="section">
-
-<h2>Monthly Goals</h2>
-
-<input id="goalText">
-<button onclick="addGoal()">Add Goal</button>
-
-<div id="goalList"></div>
 
 </div>
 
@@ -236,17 +257,17 @@ border-radius:10px
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+
 <script>
 
-const firebaseConfig = {
-apiKey: "AIzaSyA9Ngg4cZ6H0gOePfHZ4GOg1_YZe5qZS7Y",
-authDomain: "progress-app-6e9e6.firebaseapp.com",
-projectId: "progress-app-6e9e6",
-storageBucket: "progress-app-6e9e6.firebasestorage.app",
-messagingSenderId: "867817123277",
-appId: "1:867817123277:web:6d8fd798a621684295a884",
-measurementId: "G-V5QGRLH4NE"
-};
+const firebaseConfig={
+apiKey:"AIzaSyA9Ngg4cZ6H0gOePfHZ4GOg1_YZe5qZS7Y",
+authDomain:"progress-app-6e9e6.firebaseapp.com",
+projectId:"progress-app-6e9e6",
+storageBucket:"progress-app-6e9e6.firebasestorage.app",
+messagingSenderId:"867817123277",
+appId:"1:867817123277:web:6d8fd798a621684295a884"
+}
 
 firebase.initializeApp(firebaseConfig)
 
@@ -256,54 +277,51 @@ const tasksRef=db.collection("tasks")
 const videosRef=db.collection("videos")
 const learningRef=db.collection("learning")
 const financeRef=db.collection("finance")
-const goalsRef=db.collection("goals")
 
-let tasks=[],videos=[],finance=[],goals=[]
+let tasks=[],videos=[],finance=[]
+
 
 function show(id){
 document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
 document.getElementById(id).classList.add("active")
 }
 
+
+/* TASKS */
+
 function addTask(){
+
 tasksRef.add({
 text:taskText.value,
 owner:taskOwner.value,
 sub:taskSub.value,
-priority:taskPriority.value,
-done:false,
-date:taskDateFilter.value || new Date().toISOString().slice(0,10)
+done:false
 })
+
 }
 
 tasksRef.onSnapshot(s=>{
+
 tasks=[]
 s.forEach(d=>tasks.push({id:d.id,...d.data()}))
+
 renderTasks()
 updateDashboard()
+
 })
 
 function renderTasks(){
 
 taskList.innerHTML=""
 
-let filtered=tasks
-
-if(taskDateFilter.value)
-filtered=filtered.filter(t=>t.date===taskDateFilter.value)
-
-if(subFilter.value)
-filtered=filtered.filter(t=>t.sub===subFilter.value)
-
-if(pendingOnly.checked)
-filtered=filtered.filter(t=>!t.done)
-
-filtered.forEach(t=>{
+tasks.forEach(t=>{
 
 taskList.innerHTML+=`
+
 <div class="card">
 
-<input type="checkbox" ${t.done?"checked":""}
+<input type="checkbox"
+${t.done?"checked":""}
 onclick="tasksRef.doc('${t.id}').update({done:${!t.done}})">
 
 <b>${t.text}</b> (${t.owner})
@@ -311,24 +329,36 @@ onclick="tasksRef.doc('${t.id}').update({done:${!t.done}})">
 <button onclick="tasksRef.doc('${t.id}').delete()">Delete</button>
 
 </div>
+
 `
 
 })
 
 }
 
+
+/* VIDEOS */
+
 function addVideo(){
+
 videosRef.add({
 topic:videoTopic.value,
 script:videoScript.value,
-publishDate:videoDate.value
+publishDate:videoDate.value,
+stages:{script:true,shoot:false,edit:false,thumb:false,post:false}
 })
+
 }
 
 videosRef.onSnapshot(s=>{
+
 videos=[]
 s.forEach(d=>videos.push({id:d.id,...d.data()}))
+
 renderVideos()
+renderCalendar()
+updateDashboard()
+
 })
 
 function renderVideos(){
@@ -341,7 +371,23 @@ videoList.innerHTML+=`
 
 <div class="card">
 
-<b>${v.topic}</b>
+<b onclick="openScript('${v.id}')">${v.topic}</b>
+
+${Object.keys(v.stages).map(stage=>`
+
+<label>
+
+<input type="checkbox"
+
+${v.stages[stage]?"checked":""}
+
+onclick="videosRef.doc('${v.id}').update({'stages.${stage}':${!v.stages[stage]}})">
+
+${stage}
+
+</label>
+
+`).join("<br>")}
 
 <button onclick="videosRef.doc('${v.id}').delete()">Delete</button>
 
@@ -353,30 +399,155 @@ videoList.innerHTML+=`
 
 }
 
+
+let currentVideo
+
+function openScript(id){
+
+let v=videos.find(x=>x.id===id)
+
+currentVideo=id
+
+modalTitle.innerText=v.topic
+modalScript.value=v.script
+
+scriptModal.style.display="flex"
+
+}
+
+function closeModal(){
+scriptModal.style.display="none"
+}
+
+function saveScript(){
+videosRef.doc(currentVideo).update({script:modalScript.value})
+closeModal()
+}
+
+
+/* CALENDAR */
+
+function renderCalendar(){
+
+calendarGrid.innerHTML=""
+
+let today=new Date()
+
+let year=today.getFullYear()
+let month=today.getMonth()
+
+let days=new Date(year,month+1,0).getDate()
+
+for(let i=1;i<=days;i++){
+
+let date=`${year}-${String(month+1).padStart(2,"0")}-${String(i).padStart(2,"0")}`
+
+let vids=videos.filter(v=>v.publishDate===date)
+
+calendarGrid.innerHTML+=`
+
+<div class="day" onclick="openDay('${date}')">
+
+<b>${i}</b><br>
+
+${vids.map(v=>v.topic).join("<br>")}
+
+</div>
+
+`
+
+}
+
+}
+
+function openDay(date){
+
+show("videos")
+
+videoList.innerHTML=""
+
+videos.filter(v=>v.publishDate===date)
+
+.forEach(v=>{
+
+videoList.innerHTML+=`<div class="card">${v.topic}</div>`
+
+})
+
+}
+
+
+/* LEARNING */
+
+function addLearning(){
+
+learningRef.doc(learningTopic.value).set({
+topic:learningTopic.value,
+notes:learningNotes.value
+})
+
+}
+
+learningRef.onSnapshot(s=>{
+
+learningList.innerHTML=""
+
+s.forEach(d=>{
+
+let l=d.data()
+
+learningList.innerHTML+=`
+
+<div class="card">
+
+<b>${l.topic}</b>
+
+<textarea onchange="learningRef.doc('${d.id}').update({notes:this.value})">${l.notes||""}</textarea>
+
+<button onclick="learningRef.doc('${d.id}').delete()">Delete</button>
+
+</div>
+
+`
+
+})
+
+})
+
+
+/* FINANCE */
+
 function addEntry(){
 
 let amount=Number(entryAmount.value)
 
 if(entryOwner.value==="Split"){
 
-financeRef.add({type:entryType.value,amount:amount/2,desc:entryDesc.value,owner:"Naman",date:entryDate.value})
+financeRef.add({type:entryType.value,amount:amount/2,owner:"Naman",desc:entryDesc.value})
 
-financeRef.add({type:entryType.value,amount:amount/2,desc:entryDesc.value,owner:"Prateek",date:entryDate.value})
+financeRef.add({type:entryType.value,amount:amount/2,owner:"Prateek",desc:entryDesc.value})
 
-}else{
+}
 
-financeRef.add({type:entryType.value,amount:amount,desc:entryDesc.value,owner:entryOwner.value,date:entryDate.value})
+else{
+
+financeRef.add({type:entryType.value,amount:amount,owner:entryOwner.value,desc:entryDesc.value})
 
 }
 
 }
 
 financeRef.onSnapshot(s=>{
+
 finance=[]
+
 transactionList.innerHTML=""
+
 s.forEach(d=>{
-finance.push({id:d.id,...d.data()})
+
 let f=d.data()
+
+finance.push(f)
 
 transactionList.innerHTML+=`
 
@@ -389,17 +560,45 @@ ${f.desc} ₹${f.amount} (${f.owner})
 </div>
 
 `
-})
 
 })
+
+updateFinanceTotals()
+
+updateDashboard()
+
+})
+
+
+function updateFinanceTotals(){
+
+let revenue=finance.filter(f=>f.type==="Revenue").reduce((a,b)=>a+b.amount,0)
+let expense=finance.filter(f=>f.type==="Expense").reduce((a,b)=>a+b.amount,0)
+
+let naman=finance.filter(f=>f.owner==="Naman").reduce((a,b)=>a+b.amount,0)
+let prateek=finance.filter(f=>f.owner==="Prateek").reduce((a,b)=>a+b.amount,0)
+
+financeTotals.innerHTML=`
+
+Revenue ₹${revenue}<br>
+Expense ₹${expense}<br>
+Net ₹${revenue-expense}<br>
+Naman ₹${naman}<br>
+Prateek ₹${prateek}
+
+`
+
+}
+
+
+/* DASHBOARD */
 
 function updateDashboard(){
 
-let taskDone=tasks.filter(t=>t.done).length
-let taskTotal=tasks.length
+let done=tasks.filter(t=>t.done).length
 
 dashStats.innerHTML=`
-Tasks ${taskDone}/${taskTotal}
+Tasks ${done}/${tasks.length}
 `
 
 }
