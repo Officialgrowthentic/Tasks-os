@@ -168,17 +168,6 @@ border-radius:10px
 
 </div>
 
-<!-- SCRIPT MODAL -->
-
-<div id="scriptModal" class="modal">
-<div class="modalBox">
-<h3 id="modalTitle"></h3>
-<textarea id="modalScript" style="height:300px"></textarea>
-<button onclick="saveScript()">Save</button>
-<button onclick="closeModal()">Close</button>
-</div>
-</div>
-
 <!-- CALENDAR -->
 
 <div id="calendar" class="section">
@@ -189,6 +178,7 @@ border-radius:10px
 <!-- LEARNING -->
 
 <div id="learning" class="section">
+
 <h2>Learning</h2>
 
 <input id="learningTopic" placeholder="Topic">
@@ -248,11 +238,15 @@ border-radius:10px
 
 <script>
 
-const firebaseConfig={
-apiKey:"YOUR_KEY",
-authDomain:"YOUR_PROJECT.firebaseapp.com",
-projectId:"YOUR_PROJECT"
-}
+const firebaseConfig = {
+apiKey: "AIzaSyA9Ngg4cZ6H0gOePfHZ4GOg1_YZe5qZS7Y",
+authDomain: "progress-app-6e9e6.firebaseapp.com",
+projectId: "progress-app-6e9e6",
+storageBucket: "progress-app-6e9e6.firebasestorage.app",
+messagingSenderId: "867817123277",
+appId: "1:867817123277:web:6d8fd798a621684295a884",
+measurementId: "G-V5QGRLH4NE"
+};
 
 firebase.initializeApp(firebaseConfig)
 
@@ -321,70 +315,91 @@ onclick="tasksRef.doc('${t.id}').update({done:${!t.done}})">
 
 })
 
-updateSubFolders()
-updateTaskProgress(filtered)
-
 }
 
-function updateSubFolders(){
+function addVideo(){
+videosRef.add({
+topic:videoTopic.value,
+script:videoScript.value,
+publishDate:videoDate.value
+})
+}
 
-let subs=[...new Set(tasks.map(t=>t.sub).filter(Boolean))]
+videosRef.onSnapshot(s=>{
+videos=[]
+s.forEach(d=>videos.push({id:d.id,...d.data()}))
+renderVideos()
+})
 
-subFilter.innerHTML=`<option value="">All Subfolders</option>`
+function renderVideos(){
 
-subs.forEach(s=>{
-subFilter.innerHTML+=`<option value="${s}">${s}</option>`
+videoList.innerHTML=""
+
+videos.forEach(v=>{
+
+videoList.innerHTML+=`
+
+<div class="card">
+
+<b>${v.topic}</b>
+
+<button onclick="videosRef.doc('${v.id}').delete()">Delete</button>
+
+</div>
+
+`
+
 })
 
 }
 
-function updateTaskProgress(list){
+function addEntry(){
 
-let total=list.length
-let done=list.filter(t=>t.done).length
+let amount=Number(entryAmount.value)
 
-let naman=list.filter(t=>t.owner==="Naman")
-let prateek=list.filter(t=>t.owner==="Prateek")
+if(entryOwner.value==="Split"){
 
-function p(arr){
-return arr.length?Math.round(arr.filter(a=>a.done).length/arr.length*100):0
+financeRef.add({type:entryType.value,amount:amount/2,desc:entryDesc.value,owner:"Naman",date:entryDate.value})
+
+financeRef.add({type:entryType.value,amount:amount/2,desc:entryDesc.value,owner:"Prateek",date:entryDate.value})
+
+}else{
+
+financeRef.add({type:entryType.value,amount:amount,desc:entryDesc.value,owner:entryOwner.value,date:entryDate.value})
+
 }
 
-taskProgress.innerHTML=`
+}
 
-Overall ${p(list)}%
+financeRef.onSnapshot(s=>{
+finance=[]
+transactionList.innerHTML=""
+s.forEach(d=>{
+finance.push({id:d.id,...d.data()})
+let f=d.data()
 
-<div class="progressbar"><div class="progress" style="width:${p(list)}%"></div></div>
+transactionList.innerHTML+=`
 
-Naman ${p(naman)}%
+<div class="card">
 
-<div class="progressbar"><div class="progress" style="width:${p(naman)}%"></div></div>
+${f.desc} ₹${f.amount} (${f.owner})
 
-Prateek ${p(prateek)}%
+<button onclick="financeRef.doc('${d.id}').delete()">Delete</button>
 
-<div class="progressbar"><div class="progress" style="width:${p(prateek)}%"></div></div>
+</div>
 
 `
+})
 
-}
+})
 
 function updateDashboard(){
 
 let taskDone=tasks.filter(t=>t.done).length
 let taskTotal=tasks.length
 
-let videoPosted=videos.filter(v=>v.stages?.posting).length
-let videoTotal=videos.length
-
-let revenue=finance.filter(f=>f.type==="Revenue").reduce((a,b)=>a+b.amount,0)
-let expense=finance.filter(f=>f.type==="Expense").reduce((a,b)=>a+b.amount,0)
-
 dashStats.innerHTML=`
-Tasks ${taskDone}/${taskTotal}<br>
-Videos ${videoPosted}/${videoTotal}<br>
-Revenue ₹${revenue}<br>
-Expense ₹${expense}<br>
-Net ₹${revenue-expense}
+Tasks ${taskDone}/${taskTotal}
 `
 
 }
